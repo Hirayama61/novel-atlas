@@ -26,7 +26,7 @@ export const FILES: [string, string][] = [
 title: 灯台守の娘
 status: 連載中
 schedule: { cadence: weekly, wip_limit: 1 }
-length: { target_chars: 100, range: [50, 200] }
+length: { target_chars: 100, max_chars: 120 }
 chapters:
   - { no: 1, title: 灯, episodes: [1, 4] }
   - { no: 2, title: 港, episodes: [5, 8] }

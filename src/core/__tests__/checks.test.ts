@@ -3,7 +3,7 @@ import { checkCanon } from "../check/canon";
 import { checkClaims } from "../check/claims";
 import { designChanged } from "../check/gate";
 import { checkDesign } from "../check/design";
-import { checkFeedback, lintWork } from "../check/lint";
+import { checkFeedback, checkLength, lintWork } from "../check/lint";
 import { buildDataSet, type Finding } from "../data/work";
 import { lintPunctuation, parseVocab } from "../lint/punctuation";
 import { DESIGN_3, FILES } from "./fixtures";
@@ -237,5 +237,46 @@ describe("設計承認のゲート", () => {
     expect(
       designChanged(DESIGN_3, DESIGN_3.replace("characters: [mio]", "characters: [mio, father]")),
     ).toBe(true);
+  });
+});
+
+describe("版と字数", () => {
+  it("旧版(archive/)の本文と設定は読み込まない", () => {
+    const { data, findings } = load([
+      ["works/lh/archive/editions/v1/episodes/001/text.md", "# 第1話\n　旧版。\n"],
+      ["works/lh/archive/editions/v1/canon/places.yaml", "places: [{ id: x }]\n"],
+    ]);
+    expect(findings).toEqual([]);
+    expect(data.works.get("lh")!.episodes.get(1)!.text).not.toContain("旧版");
+  });
+  it("本文の字数が上限を超えたら落とす", () => {
+    const long = `# 第2話\n　${"あ".repeat(121)}\n`;
+    const { data } = load([["works/lh/episodes/002/text.md", long]]);
+    expect(checkLength(data.works.get("lh")!).map((f) => f.check)).toEqual(["字数"]);
+    expect(checkLength(load().data.works.get("lh")!)).toEqual([]);
+  });
+  it("字数予算が上限を超えたら落とす", () => {
+    const y = DESIGN_3.replace("total: 100", "total: 130").replace(
+      "target_chars: 50",
+      "target_chars: 80",
+    );
+    const { data } = load([["works/lh/episodes/003/design.yaml", y]]);
+    const w = data.works.get("lh")!;
+    expect(errors(checkDesign(w, w.episodes.get(3)!.design!)).map((f) => f.check)).toContain(
+      "字数",
+    );
+  });
+  it("本文で成り立つ事実は、現行版の出典が付くまで確定にできない", () => {
+    const place = (extra: string) =>
+      load([
+        [
+          "works/lh/canon/places.yaml",
+          `places:\n  - { id: lighthouse, name: 灯台, status: 確定, basis: 本文${extra} }\n`,
+        ],
+      ]);
+    const fs = (extra: string) =>
+      errors(checkCanon(place(extra).data.works.get("lh")!)).map((f) => f.check);
+    expect(fs("")).toContain("確定の根拠");
+    expect(fs(", sources: [{ ep: 1, quote: 灯室の窓が赤く割れた }]")).not.toContain("確定の根拠");
   });
 });

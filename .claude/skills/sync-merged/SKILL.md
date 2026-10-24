@@ -23,6 +23,7 @@ gh api "$R/pulls?state=closed&per_page=30" --jq '.[] | select(.merged_at != null
 ## 2. canon
 
 - その話の claims に出た事実のうち、canon で `status: 仮` のものを `確定` に上げ、`since` と `sources`(最終稿の引用)を合わせる。本文に出たものは戻せないため。
+  `basis: 本文` の事実(旧版の本文で成り立っていて、版の切り替えで 仮 に戻したもの)も同じ: 現行版の本文に書かれたら、出典を付けて `確定` に戻す。出典なしで `確定` にすると CI が落ちる。
 - claims の `names` で `resolves_to: null` のまま残ったものは、canon に足す(新しい人物・場所。status 仮でよい)。
 - design.yaml の threads の plant / advance / payoff を `canon/threads.yaml` の `events` に足す。
 - design.yaml の `status` を `published` にし、`title.final` を確定する(未定なら本文の見出しから)。

@@ -20,10 +20,36 @@ export const Work = z.strictObject({
     cadence: z.enum(["weekly", "biweekly", "manual"]),
     wip_limit: z.number().int().positive().default(1),
   }),
-  length: z.strictObject({
-    target_chars: z.number().int().positive(),
-    range: z.tuple([z.number().int(), z.number().int()]),
-  }),
+  /** 1 話の字数(空白を除いた文字数。check/text.ts の countChars)。値はここ 1 か所で変える */
+  length: z
+    .strictObject({
+      target_chars: z.number().int().positive(),
+      /** これを超える本文・字数予算は CI が落とす */
+      max_chars: z.number().int().positive(),
+    })
+    .refine((l) => l.target_chars <= l.max_chars, "target_chars は max_chars 以下にする"),
+  /**
+   * 版。current がちょうど 1 つ。現行版の話は works/<作品>/episodes/、旧版は archive/editions/<id>/ に置き、
+   * 旧版は照合・ルーティン・読者向け一覧の対象にしない(参照資料)
+   */
+  editions: z
+    .array(
+      z.strictObject({
+        id: Id,
+        status: z.enum(["current", "archived"]),
+        title: z.string(),
+        started: z.string().optional(),
+        episodes: z.tuple([EpisodeNo, EpisodeNo]).nullable().optional(),
+        path: z.string().optional(),
+        doc: z.string().optional(),
+        note: z.string().optional(),
+      }),
+    )
+    .refine(
+      (es) => es.filter((e) => e.status === "current").length === 1,
+      "current の版はちょうど 1 つ",
+    )
+    .optional(),
   chapters: z.array(
     z.strictObject({
       no: z.number().int().positive(),

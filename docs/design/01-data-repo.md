@@ -44,7 +44,10 @@ works/
         claims.yaml            本文から抽出した事実(自動生成。03 参照)
         lint-allow.yaml        lint の意図的例外(行の引用・規則・理由)
       002/ ...
-    archive/                   原版アーカイブ・没案(旧版_opus48、没案_第003話_短縮版)
+    editions/<id>.md           版の方針(現行版の書き直し方針など。話設計書より上の層)
+    archive/
+      editions/<id>/           旧版(本文・話設計書・採点・申し送り・canon の写し)。照合・ルーティン・一覧の対象外
+      rejected/                没案
     feedback/
       001.yaml ...             PR コメントの構造化記録(話ごと)
     scores/
@@ -117,3 +120,14 @@ chapters:
     title: 星詠みのセロ
     episodes: [1, 12]
 ```
+
+## 版(2026-10-24 追加)
+
+作品を第 1 話から書き直すときは版を切る。`work.yaml` の `editions` に版を並べ、`status: current` をちょうど 1 つにする。
+
+- 現行版の話は `works/<作品>/episodes/` に置く。旧版は `works/<作品>/archive/editions/<id>/` に、本文・話設計書・採点・申し送り・canon の写しごと移す。
+- スキーマの読み込み(`src/core/data/`)は `archive/` を読まないので、照合 CI・ルーティン・ビューアの一覧は現行版だけを見る。ビューアは `archive/` を同期しない。
+- 版の方針は `works/<作品>/editions/<id>.md` に書き、`editions[].doc` から指す。
+- canon の事実は「背骨」と「本文」に分け(03 の `basis`)、旧版の本文で成り立っていた事実は 仮 に戻す。
+- 1 話の字数は `work.yaml` の `length.target_chars` と `length.max_chars` が持つ。CI は話設計書の `budget.total` と本文の字数が `max_chars` を超えたら落とす。
+

@@ -18,10 +18,19 @@ export type Source = z.infer<typeof Source>;
 
 export const EpisodeNo = z.number().int().positive();
 
+/**
+ * 確定の根拠。背骨 = 作者が設計で固定したもの(本文が無くても確定でよい)。
+ * 本文 = 本文に書かれて成り立つもの。現行版の本文の出典(sources)が付くまで確定にできない。
+ * 省略は背骨として扱う。
+ */
+export const Basis = z.enum(["背骨", "本文"]);
+export type Basis = z.infer<typeof Basis>;
+
 /** すべての事実が持つ項目 */
 export const factFields = {
   id: Id,
   status: Status,
+  basis: Basis.optional(),
   since: EpisodeNo.nullable().optional(),
   sources: z.array(Source).optional(),
   note: z.string().optional(),

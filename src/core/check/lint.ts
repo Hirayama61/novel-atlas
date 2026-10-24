@@ -1,6 +1,7 @@
 import type { Finding, WorkData, DataSet } from "../data/work";
 import { episodeDir } from "../data/files";
 import { FAILING_KINDS, lintPunctuation, parseVocab, type VocabEntry } from "../lint/punctuation";
+import { countChars } from "./text";
 
 export interface LintInput {
   data: DataSet;
@@ -100,6 +101,26 @@ export function checkFeedback(w: WorkData, input: LintInput): Finding[] {
           message: `${it.id}: 辞書に「${it.vocab_pattern}」の行が無い`,
         });
     }
+  }
+  return out;
+}
+
+/** 本文の字数の上限(work.yaml の length.max_chars)。現行版の本文すべてに当てる */
+export function checkLength(w: WorkData, only?: number): Finding[] {
+  const max = w.work?.length.max_chars;
+  if (!max) return [];
+  const out: Finding[] = [];
+  for (const [no, ep] of w.episodes) {
+    if (only !== undefined && no !== only) continue;
+    if (!ep.text) continue;
+    const n = countChars(ep.text);
+    if (n > max)
+      out.push({
+        level: "error",
+        check: "字数",
+        path: `works/${w.id}/episodes/${episodeDir(no)}/text.md`,
+        message: `本文 ${n} 字が上限 ${max} 字を超える(目標 ${w.work!.length.target_chars} 字)`,
+      });
   }
   return out;
 }

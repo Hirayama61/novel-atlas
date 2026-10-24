@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { EpisodeNo, Id, Source, Status, factFields } from "./common";
+import { Basis, EpisodeNo, Id, Source, Status, factFields } from "./common";
 
 // ---- characters/<id>.yaml
 
@@ -55,6 +55,7 @@ const Relation = z.strictObject({
   since: EpisodeNo.nullable().optional(),
   state: z.string().optional(),
   status: Status,
+  basis: Basis.optional(),
 });
 
 const Knowledge = z.strictObject({
@@ -66,6 +67,7 @@ const Knowledge = z.strictObject({
   /** 誤信。事実と違う理解で持っている */
   belief: z.string().optional(),
   status: Status,
+  basis: Basis.optional(),
   note: z.string().optional(),
 });
 

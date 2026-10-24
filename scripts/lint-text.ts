@@ -4,6 +4,8 @@
 
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
+import { parse as parseYaml } from "yaml";
+import { countChars } from "../src/core/check/text";
 import { lintPunctuation, parseVocab } from "../src/core/lint/punctuation";
 import { requireDataDir } from "./lib/data-dir";
 
@@ -37,4 +39,18 @@ for (const kind of Object.keys(TITLES) as (keyof typeof TITLES)[]) {
 const n = (k: string) => hits.filter((h) => h.kind === k).length;
 console.log(
   `計: S4=${n("S4")} VOCAB=${n("VOCAB")} FRAG=${n("FRAG")} TTE=${n("TTE")} C2=${n("C2")}`,
+);
+
+// 字数(work.yaml の length と比べる)
+const text = readFileSync(join(dir, rel), "utf8");
+const length = work
+  ? ((
+      parseYaml(read(`works/${work}/work.yaml`)) as {
+        length?: { target_chars: number; max_chars: number };
+      }
+    )?.length ?? null)
+  : null;
+const chars = countChars(text);
+console.log(
+  `字数: ${chars}${length ? ` / 目標 ${length.target_chars} / 上限 ${length.max_chars}${chars > length.max_chars ? "(上限超過)" : ""}` : ""}`,
 );

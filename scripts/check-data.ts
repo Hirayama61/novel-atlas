@@ -6,7 +6,7 @@ import { createHash } from "node:crypto";
 import { checkCanon } from "../src/core/check/canon";
 import { checkClaims } from "../src/core/check/claims";
 import { checkDesign, checkRealization } from "../src/core/check/design";
-import { checkFeedback, lintWork } from "../src/core/check/lint";
+import { checkFeedback, checkLength, lintWork } from "../src/core/check/lint";
 import type { Finding } from "../src/core/data/work";
 import { loadDataDir, requireDataDir } from "./lib/data-dir";
 
@@ -37,7 +37,7 @@ for (const w of data.works.values()) {
       if (ep.design) findings.push(...checkDesign(w, ep.design));
     }
   }
-  if (only.has("lint")) findings.push(...lintWork(w, lint, epFilter));
+  if (only.has("lint")) findings.push(...lintWork(w, lint, epFilter), ...checkLength(w, epFilter));
   if (only.has("canon")) {
     findings.push(...checkCanon(w));
     findings.push(...checkClaims(w, gitBlobSha, epFilter));

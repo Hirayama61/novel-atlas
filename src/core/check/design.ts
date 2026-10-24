@@ -120,6 +120,11 @@ export function checkDesign(w: WorkData, d: Design): Finding[] {
   }
 
   // 字数
+  const max = w.work?.length.max_chars;
+  if (max && d.budget.total > max)
+    add("error", "字数", `budget.total ${d.budget.total} 字が上限 ${max} 字(work.yaml)を超える`);
+  if (d.budget.emotional_core.chars > d.budget.total)
+    add("error", "字数", `感情の核 ${d.budget.emotional_core.chars} 字が budget.total を超える`);
   const sum = d.synopsis.reduce((a, p) => a + p.target_chars, 0);
   if (Math.abs(sum - d.budget.total) > d.budget.total * 0.1)
     add(

@@ -238,10 +238,61 @@ export function checkThreads(w: WorkData): Finding[] {
   return out;
 }
 
+/**
+ * 確定の根拠: basis が 本文 の事実は、現行版の本文の出典が付くまで 確定 にできない。
+ * 旧版の本文で成り立っていた事実は、新版で書かれてマージされたとき(sync-merged)に 確定 へ戻る。
+ */
+export function checkBasis(w: WorkData): Finding[] {
+  const out: Finding[] = [];
+  const written = (ep: number | null | undefined) => ep != null && !!w.episodes.get(ep)?.text;
+  const need = (path: string, id: string, ok: boolean) => {
+    if (!ok)
+      out.push({
+        level: "error",
+        check: "確定の根拠",
+        path,
+        message: `${id}: 本文で成り立つ事実(basis: 本文)が、現行版の出典なしで 確定 になっている。仮 に戻すか出典を付ける`,
+      });
+  };
+  type F = { id: string; status: string; basis?: string; sources?: { ep: number }[] };
+  const fact = (path: string, f: F) => {
+    if (f.basis === "本文" && f.status === "確定")
+      need(
+        path,
+        f.id,
+        (f.sources ?? []).some((s) => written(s.ep)),
+      );
+  };
+  for (const c of w.characters) {
+    const p = `${base(w)}/canon/characters/${c.id}.yaml`;
+    fact(p, c);
+    for (const a of c.attributes ?? []) fact(p, a);
+    for (const k of c.core ?? []) fact(p, k);
+    for (const r of c.relations ?? [])
+      if (r.basis === "本文" && r.status === "確定")
+        need(p, `${c.id}.relations.${r.to}`, written(r.since));
+    for (const k of c.knowledge ?? [])
+      if (k.basis === "本文" && k.status === "確定")
+        need(p, `${c.id}.knowledge.${k.fact}`, written(k.from));
+  }
+  for (const e of [...(w.timeline?.events ?? []), ...(w.timeline?.anchors ?? [])])
+    fact(`${base(w)}/canon/timeline.yaml`, e);
+  for (const t of w.threads)
+    fact(`${base(w)}/canon/threads.yaml`, {
+      ...t,
+      sources: [...(t.sources ?? []), ...(t.planted?.sources ?? [])],
+    });
+  for (const pl of w.places?.places ?? []) fact(`${base(w)}/canon/places.yaml`, pl);
+  for (const a of w.rules?.abilities ?? []) fact(`${base(w)}/canon/rules.yaml`, a);
+  for (const c of w.rules?.constraints ?? []) fact(`${base(w)}/canon/rules.yaml`, c);
+  return out;
+}
+
 export function checkCanon(w: WorkData): Finding[] {
   return [
     ...checkReferences(w),
     ...checkSources(w),
+    ...checkBasis(w),
     ...checkTextAgainstCanon(w),
     ...checkThreads(w),
   ];

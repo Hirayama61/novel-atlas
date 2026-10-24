@@ -45,8 +45,10 @@ gh api "$R/pulls?state=open&per_page=50" --jq '.[] | "#\(.number) \(.head.ref) [
 ## 2. 設計 PR を開く
 
 1. ブランチ `ep/<作品>/<NNN>` を作る。
-2. 読む: `CLAUDE.md`、`$D/craft/*.md`(preferences・style-norms・story-principles・glossary)、`$D/works/<作品>/charter.md`・`arcs.yaml`・`handoff.yaml`・`canon/*`、直近 3 話の `text.md` と `design.yaml`、直近の `feedback/*.yaml`(依頼者の好み・指摘の傾向)。
+2. 読む: 版の方針(`work.yaml` の editions で status current の `doc`)、`CLAUDE.md`、`$D/craft/*.md`(preferences・style-norms・story-principles・glossary)、`$D/works/<作品>/charter.md`・`arcs.yaml`・`handoff.yaml`・`canon/*`、直近 3 話の `text.md` と `design.yaml`、直近の `feedback/*.yaml`(依頼者の好み・指摘の傾向)。
 3. `$D/works/<作品>/episodes/<NNN>/design.yaml` を書く(スキーマは `$A/src/core/schema/episode.ts`、説明は `$A/docs/design/04-episode-design-schema.md`)。
+   - `budget.total` は `work.yaml` の `length.target_chars` を目安にし、`length.max_chars` を超えない(CI が落とす)。
+   - 現行版の話だけが対象(`works/<作品>/episodes/`)。旧版(`archive/editions/`)は参照資料で、話数も現行版とは別。
    - `handoff.yaml` の、この話を `target` にした `open` の項目をすべて `handoff_in` で扱う(consume / defer / drop と理由)。
    - `type.label` は直近 2 話と変える。`type.breaks` で、直近と同じビートにしないための崩し方を書く。
    - この話で新しく必要な canon の項目(人物・場所・出来事・伏線・知識)は、canon のファイルに `status: 仮` で足す。
@@ -62,7 +64,7 @@ gh api "$R/pulls?state=open&per_page=50" --jq '.[] | "#\(.number) \(.head.ref) [
 ## 3. 初稿
 
 1. `stage:design` を外して `stage:drafting` を付ける。ブランチを checkout して pull。
-2. `episode-writer` を起動する。渡すもの: 作品 ID・話数・DATA のパス。返ってきた「設計の各欄の実現箇所」を控える。
+2. `episode-writer` を起動する。渡すもの: 作品 ID・話数・DATA のパス・字数予算(`budget.total` と `length.max_chars`)。返ってきた「設計の各欄の実現箇所」を控える。
    メインは本文を書かない(書いた本人でない目で検品するため)。
 3. `extract-claims` の手順で claims.yaml を作る。
 4. 検査: `DATA_DIR=$D pnpm --dir $A -s check-data --work <作品> --episode <N>`。エラーはメインが本文を直して消す(設計を変えるなら 04 の「承認のゲート」の範囲だけ)。本文を直したら claims を抽出し直す。
