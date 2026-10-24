@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "rules": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^R-[0-9A-Z]+$"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "禁止",
+              "維持"
+            ]
+          },
+          "group": {
+            "type": "string"
+          },
+          "text": {
+            "type": "string"
+          },
+          "pattern": {
+            "type": "string"
+          },
+          "check": {
+            "type": "string",
+            "enum": [
+              "pattern",
+              "lint",
+              "review"
+            ]
+          },
+          "origin": {
+            "type": "string"
+          },
+          "date": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "group",
+          "text",
+          "check"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": [
+    "rules"
+  ],
+  "additionalProperties": false
+}
