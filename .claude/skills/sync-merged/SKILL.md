@@ -36,7 +36,7 @@ gh api "$R/pulls?state=closed&per_page=30" --jq '.[] | select(.merged_at != null
 ## 4. 申し送り・採点・遡及
 
 - `handoff.yaml`: この話で消化した項目を `consumed`(resolved_in)に。内部レビュー・下読み・採点の落ち込みのうち次話で取り返すものを、`target: N+1` の `open` で足す。
-- 採点(確定稿で回し直す。PR 中の採点は初稿基準のため): `run-isolated.sh scorer` を 2 回と `codex` を 1 回(案 C への倒し方は write-episode と同じ)。`scores/episodes.json` に既存の形式で記録する(話の型は design の `position.role`)。5 話ごと・章末は通しも回して `scores/overall.json` に。
+- 採点(確定稿で回し直す。PR 中の採点は初稿基準のため): `run-isolated.sh scorer` を 2 回と `codex-scorer` を 1 回(案 C への倒し方は write-episode と同じ)。`scores/episodes.json` に既存の形式で記録する(話の型は design の `position.role`)。5 話ごと・章末は通しも回して `scores/overall.json` に。
 - 観点遡及: この話で `ledger.yaml` に増えた規則それぞれについて、過去話への反映要否を判断し、`feedback/<NNN>.yaml` の `retro` に記録する。反映するなら「通し改稿」の Issue をデータリポジトリに起案する(本文は直さない)。
 
 ## 5. 仕上げ

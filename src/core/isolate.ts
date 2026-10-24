@@ -3,7 +3,7 @@
 
 import { episodeDir } from "./data/files";
 
-export const ROLES = ["reader", "slush", "scorer", "codex"] as const;
+export const ROLES = ["reader", "slush", "scorer", "codex", "codex-scorer"] as const;
 export type Role = (typeof ROLES)[number];
 
 /** 役割ごとに渡す craft 文書(パスと、切り出す節の見出しの先頭) */
@@ -12,6 +12,7 @@ const CRAFT: Record<Role, { path: string; section?: string; as: string }[]> = {
   slush: [{ path: "craft/review-checklist.md", section: "## D.", as: "checklist.md" }],
   scorer: [{ path: "craft/rubric.md", as: "rubric.md" }],
   codex: [{ path: "craft/review-checklist.md", section: "## C.", as: "checklist.md" }],
+  "codex-scorer": [{ path: "craft/rubric.md", as: "rubric.md" }],
 };
 
 /** Markdown から、指定の見出しで始まる節(次の同じ深さの見出しまで)を切り出す */

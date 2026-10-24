@@ -76,7 +76,7 @@ gh api "$R/pulls?state=open&per_page=50" --jq '.[] | "#\(.number) \(.head.ref) [
      隔離レビュアーへの指示に、設計・意図・経緯を書かない(話数とバンドルの場所だけ)。
 6. 指摘を三角分けする: 複数のレビュアーが重なる指摘・明確な規則違反は即適用。割れる指摘はメインが判断し、迷うものは採らずに PR 本文の「判断が割れたもの」に書く。却下した指摘は `design.yaml` の `rejected` に理由つきで(source: `reviewer:<名前>`)。
 7. 4〜6 を最大 3 巡。3 巡目でも重大な指摘が残るなら、`needs-input` を付けて PR にその旨をコメントし、`busy` を外して終える。
-8. 確定直前に、下読みと採点を隔離で回す(`run-isolated.sh slush` と、`scorer` を 2 回+`codex` 1 回。案 C への倒し方は 5 と同じ)。
+8. 確定直前に、下読みと採点を隔離で回す(`run-isolated.sh slush` と、`scorer` を 2 回+`codex-scorer` 1 回。案 C への倒し方は 5 と同じ)。
    下読みの重大指摘のうち保留相当のものだけ対応する(巡数は増やさない)。採点でどれかの観点が 1 点なら `needs-input` を付けて止める。
    レビューの要約と採点を `$D/works/<作品>/feedback/<NNN>.yaml` の `reviews` に書く(episode・pr・rounds: 0・items: [] で作る)。
 9. commit(`feat(<作品>): 第N話 初稿(内部レビュー N 巡)`)して push。

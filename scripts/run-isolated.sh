@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # 隔離レビュアーを、隔離バンドルだけを作業ディレクトリにした別プロセスで起動する(設計 05 の案 A)。
-#   DATA_DIR=... scripts/run-isolated.sh <reader|slush|scorer|codex> <作品> <話数> <出力ファイル> [ブランチ] [指示の追記]
+#   DATA_DIR=... scripts/run-isolated.sh <reader|slush|scorer|codex|codex-scorer> <作品> <話数> <出力ファイル> [ブランチ] [指示の追記]
 # 終了コード 3 = この環境で隔離プロセスを起動できなかった。呼び出し側はサブエージェント(案 C)に倒し、その旨を記録する。
 set -euo pipefail
 cd "$(dirname "$0")/.."
@@ -22,6 +22,7 @@ reader) agent=reader-experience-reviewer ;;
 slush) agent=slush-reader-reviewer ;;
 scorer) agent=rubric-scorer ;;
 codex) agent=reader-experience-reviewer ;;
+codex-scorer) agent=rubric-scorer ;;
 *)
   echo "未知の役割: $role" >&2
   exit 2
@@ -31,7 +32,7 @@ esac
 prompt="$(awk 'BEGIN{n=0} /^---$/{n++; next} n>=2' ".claude/agents/$agent.md")"
 task="作業ディレクトリの隔離バンドルを読み、手順どおりに報告せよ。対象は第${ep}話。${extra}"
 
-if [ "$role" = "codex" ]; then
+if [ "$role" = "codex" ] || [ "$role" = "codex-scorer" ]; then
   command -v codex >/dev/null || exit 3
   # Codex は読み取り専用のサンドボックスで、バンドルを作業ディレクトリにして動かす。
   # サンドボックスはバンドル外の読み取りまでは止めないので、指示でも外を読まないよう縛る(05 に記載の限界)。
