@@ -17,7 +17,7 @@
 
 | 領域 | 内容 |
 | --- | --- |
-| リポジトリ | `novel-atlas`(public)と `novel-atlas-data`(private)を作る。ラベル・ブランチ保護・必須チェックを設定 |
+| リポジトリ | `novel-atlas`(public)と `novel-atlas-data`(private)を作る。ラベルを設定(ブランチ保護は無料プランの private リポジトリでは使えない。05 参照) |
 | 移行 | 02 の手順 1〜5 と 7。指摘ログの構造化(手順 6)は 2 段目 |
 | スキーマ | canon・design・feedback の zod スキーマと JSON Schema |
 | CI | `schema`・`design`・`lint`(check.pl の移植・vocab・textlint)・`feedback`・`gate`。`canon` は「スキーマ・参照・出典・封印語・表記・固有名」まで |
