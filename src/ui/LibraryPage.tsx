@@ -1,0 +1,44 @@
+import { loadConfig } from "../sync/github";
+import { href } from "./router";
+import { useData } from "./useData";
+
+export function LibraryPage() {
+  const { data, loading, error, sync, progress } = useData("main");
+  if (!loadConfig().token)
+    return (
+      <p>
+        まず <a href={href({ page: "settings" })}>設定</a>{" "}
+        でデータリポジトリのトークンを入れてください。
+      </p>
+    );
+  if (loading) return <p className="muted">読み込み中…</p>;
+  const works = [...(data?.works.values() ?? [])].filter((w) => w.work);
+  return (
+    <div>
+      <div className="toolbar">
+        <h2>作品</h2>
+        <button onClick={() => void sync()} disabled={!!progress}>
+          {progress ?? "同期"}
+        </button>
+      </div>
+      {error ? <p className="error">{error}</p> : null}
+      <ul className="works">
+        {works.map((w) => {
+          const eps = [...w.episodes.values()].filter((e) => e.text).length;
+          return (
+            <li key={w.id}>
+              <a href={href({ page: "work", work: w.id, tab: "episodes", ref: "main" })}>
+                {w.work!.title}
+              </a>
+              <span className="muted">
+                {" "}
+                {w.work!.status} / {eps} 話 / 人物 {w.characters.length} / 伏線 {w.threads.length}
+              </span>
+            </li>
+          );
+        })}
+      </ul>
+      {!works.length ? <p className="muted">作品がありません。同期してください。</p> : null}
+    </div>
+  );
+}
