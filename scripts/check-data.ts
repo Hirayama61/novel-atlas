@@ -2,7 +2,9 @@
 //   DATA_DIR=... pnpm check-data [--only schema,design,lint,canon,feedback] [--work <id>] [--episode <N>] [--json]
 // error が 1 件でもあれば終了コード 1。
 
+import { createHash } from "node:crypto";
 import { checkCanon } from "../src/core/check/canon";
+import { checkClaims } from "../src/core/check/claims";
 import { checkDesign, checkRealization } from "../src/core/check/design";
 import { checkFeedback, lintWork } from "../src/core/check/lint";
 import type { Finding } from "../src/core/data/work";
@@ -16,6 +18,12 @@ const opt = (name: string) => {
 const only = new Set((opt("only") ?? "schema,design,lint,canon,feedback").split(","));
 const workFilter = opt("work");
 const epFilter = opt("episode") ? Number(opt("episode")) : undefined;
+
+/** git hash-object と同じ blob SHA(claims.yaml の text_sha と照合する) */
+function gitBlobSha(text: string): string {
+  const body = Buffer.from(text, "utf8");
+  return createHash("sha1").update(`blob ${body.length}\0`).update(body).digest("hex");
+}
 
 const { data, findings: schemaFindings, lint } = loadDataDir(requireDataDir());
 const findings: Finding[] = [];
@@ -32,6 +40,7 @@ for (const w of data.works.values()) {
   if (only.has("lint")) findings.push(...lintWork(w, lint, epFilter));
   if (only.has("canon")) {
     findings.push(...checkCanon(w));
+    findings.push(...checkClaims(w, gitBlobSha, epFilter));
     for (const ep of w.episodes.values()) {
       if (epFilter !== undefined && ep.no !== epFilter) continue;
       if (ep.design && ep.text && ep.design.status !== "published")

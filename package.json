@@ -20,7 +20,8 @@
     "lint-text": "tsx scripts/lint-text.ts",
     "isolate": "tsx scripts/isolate.ts",
     "build-index": "tsx scripts/build-index.ts",
-    "schemas": "tsx scripts/export-schemas.ts"
+    "schemas": "tsx scripts/export-schemas.ts",
+    "design-gate": "tsx scripts/design-gate.ts"
   },
   "dependencies": {
     "dexie": "^4.4.6",

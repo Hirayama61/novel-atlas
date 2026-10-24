@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { checkCanon } from "../check/canon";
+import { checkClaims } from "../check/claims";
+import { designChanged } from "../check/gate";
 import { checkDesign } from "../check/design";
 import { checkFeedback, lintWork } from "../check/lint";
 import { buildDataSet, type Finding } from "../data/work";
@@ -154,5 +156,86 @@ items:
     const w = data.works.get("lh")!;
     expect(checkFeedback(w, { data, workVocab: new Map() })).toHaveLength(1);
     expect(checkFeedback(w, { data, workVocab: new Map([["lh", "辻\t十字路\t\n"]]) })).toEqual([]);
+  });
+});
+
+describe("claims", () => {
+  const sha = (t: string) => `sha:${t.length}`;
+  const base = (claims: string, status = "drafting") =>
+    load([
+      [
+        "works/lh/episodes/003/design.yaml",
+        DESIGN_3.replace("status: designing", `status: ${status}`),
+      ],
+      [
+        "works/lh/episodes/003/text.md",
+        "# 第3話\n「潮は今夜引く」\n　父さんには灯は見えてない。\n",
+      ],
+      ...(claims ? ([["works/lh/episodes/003/claims.yaml", claims]] as [string, string][]) : []),
+    ]);
+  const ok = `text_sha: "sha:${"# 第3話\n「潮は今夜引く」\n　父さんには灯は見えてない。\n".length}"
+extractor: { model: m, prompt_version: 1 }
+speakers: [{ line: 2, who: mio }]
+names: [{ quote: 父さん, resolves_to: father }]
+knowledge_use: [{ who: mio, fact: lh.blind, quote: 父さんには灯は見えてない }]
+ability_use: [{ who: mio, quote: 潮は今夜引く, kind: 断言, fired: true, drift: 時機 }]
+`;
+  it("正しい claims はエラーが無い", () => {
+    const { data, findings } = base(ok);
+    expect(findings).toEqual([]);
+    expect(errors(checkClaims(data.works.get("lh")!, sha))).toEqual([]);
+  });
+  it("本文があるのに claims が無ければ落とす(投稿済みの話は除く)", () => {
+    expect(errors(checkClaims(base("").data.works.get("lh")!, sha))).toHaveLength(1);
+    expect(errors(checkClaims(base("", "published").data.works.get("lh")!, sha))).toEqual([]);
+  });
+  it("本文が変わったのに抽出し直していなければ落とす", () => {
+    const { data } = base(ok.replace(/text_sha: "[^"]+"/, 'text_sha: "old"'));
+    expect(errors(checkClaims(data.works.get("lh")!, sha))[0]?.check).toBe("claims の鮮度");
+  });
+  it("本文に無い引用(抽出の幻覚)を落とす", () => {
+    const { data } = base(ok.replace("quote: 父さん,", "quote: 母さん,"));
+    expect(errors(checkClaims(data.works.get("lh")!, sha))[0]?.check).toBe("claims の引用");
+  });
+  it("不発条件の発話が発動していたら落とす", () => {
+    const { data } = base(ok.replace("kind: 断言, fired: true", "kind: 願望, fired: true"));
+    expect(errors(checkClaims(data.works.get("lh")!, sha))[0]?.check).toBe("異能");
+  });
+  it("話者が使わない語を落とす", () => {
+    const { data } = load([
+      [
+        "works/lh/episodes/003/design.yaml",
+        DESIGN_3.replace("status: designing", "status: drafting"),
+      ],
+      [
+        "works/lh/episodes/003/text.md",
+        "# 第3話\n「潮は今夜引く」\n　父さんには灯は見えてない。\n",
+      ],
+      ["works/lh/episodes/003/claims.yaml", ok],
+      [
+        "works/lh/canon/characters/mio.yaml",
+        "id: mio\nname: ミオ\nstatus: 確定\nvoice: { avoid: [{ pattern: '今夜' }] }\nknowledge:\n  - { fact: lh.blind, from: 2, status: 確定 }\n",
+      ],
+    ]);
+    expect(errors(checkClaims(data.works.get("lh")!, sha)).map((f) => f.check)).toEqual(["口調"]);
+  });
+});
+
+describe("設計承認のゲート", () => {
+  it("場面の beats・drift・題名の変更は通し、それ以外の設計部の変更を捕まえる", () => {
+    expect(
+      designChanged(
+        DESIGN_3,
+        DESIGN_3.replace("beats: [父が灯を点けない]", "beats: [父は灯を点けなかった]"),
+      ),
+    ).toBe(false);
+    expect(designChanged(DESIGN_3, DESIGN_3.replace("final: null", "final: 灯を消す"))).toBe(false);
+    expect(designChanged(DESIGN_3, DESIGN_3.replace("drift: 規模", "drift: 時機"))).toBe(false);
+    expect(
+      designChanged(DESIGN_3, DESIGN_3.replace("core: 娘が灯を消す", "core: 娘が灯を守る")),
+    ).toBe(true);
+    expect(
+      designChanged(DESIGN_3, DESIGN_3.replace("characters: [mio]", "characters: [mio, father]")),
+    ).toBe(true);
   });
 });
