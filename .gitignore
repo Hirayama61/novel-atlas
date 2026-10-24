@@ -1,0 +1,10 @@
+node_modules/
+dist/
+dev-dist/
+*.local
+.DS_Store
+coverage/
+*.png
+!public/*.png
+test-results/
+playwright-report/
