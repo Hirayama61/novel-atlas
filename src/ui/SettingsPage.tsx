@@ -1,11 +1,13 @@
 import { useState } from "react";
 import { db } from "../db/db";
 import { loadConfig, saveConfig } from "../sync/github";
+import { IssueSheet } from "./issue/IssueSheet";
 
 export function SettingsPage() {
   const [config, setConfig] = useState(loadConfig);
   const [saved, setSaved] = useState(false);
   const [cleared, setCleared] = useState(false);
+  const [isIssueOpen, setIsIssueOpen] = useState(false);
   return (
     <div className="settings">
       <h2>設定</h2>
@@ -29,8 +31,9 @@ export function SettingsPage() {
         />
       </label>
       <p className="muted">
-        対象は novel-atlas-data だけにし、権限は Contents: Read、Pull requests: Read and
-        write、Metadata: Read を付ける。
+        対象は novel-atlas-data と novel-atlas にする。novel-atlas-data には Contents: Read、Pull
+        requests: Read and write、Metadata: Read を付ける。改善 Issue を作るなら、novel-atlas に
+        Issues: Read and write を足す。
       </p>
       <label className="row">
         <input
@@ -49,6 +52,12 @@ export function SettingsPage() {
         保存
       </button>
       {saved ? <span className="muted"> 保存しました</span> : null}
+      <h3>アプリの改善</h3>
+      {isIssueOpen ? (
+        <IssueSheet onClose={() => setIsIssueOpen(false)} />
+      ) : (
+        <button onClick={() => setIsIssueOpen(true)}>改善 Issue を書く</button>
+      )}
       <h3>端末のデータ</h3>
       <button
         onClick={async () => {

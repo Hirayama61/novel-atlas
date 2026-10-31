@@ -83,3 +83,32 @@ test("設計の承認待ちは設計書を開き、番の PR が無ければ節�
   await expect(page.getByRole("heading", { name: "作品" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "あなたの番" })).toHaveCount(0);
 });
+
+test("設定画面のシートから ready 付きの改善 Issue を作り、失敗では下書きを残す", async ({
+  page,
+}) => {
+  const state = await mockGitHub(page);
+  state.issueStatus = 403;
+  await page.goto("./#/settings");
+  await page.getByRole("button", { name: "改善 Issue を書く" }).click();
+  await expect(page.getByText("公開リポジトリなので、未公開の設定を書かない。")).toBeVisible();
+  await page.getByLabel("題").fill("縦書きの字詰めを細かく選びたい");
+  await page.getByLabel("本文").fill("1 字ずつ選べると読みやすい");
+
+  await page.getByRole("button", { name: "Issue を作る" }).click();
+  await expect(page.getByText(/Issues: Read and write を足してください/)).toBeVisible();
+
+  await page.reload();
+  await page.getByRole("button", { name: "改善 Issue を書く" }).click();
+  await expect(page.getByLabel("題")).toHaveValue("縦書きの字詰めを細かく選びたい");
+
+  state.issueStatus = 200;
+  await page.getByRole("button", { name: "Issue を作る" }).click();
+  await expect(page.getByText("を作りました")).toBeVisible();
+  expect(state.issues[0]).toEqual({
+    title: "縦書きの字詰めを細かく選びたい",
+    body: "1 字ずつ選べると読みやすい",
+    labels: ["ready"],
+  });
+  await expect(page.getByLabel("題")).toHaveValue("");
+});

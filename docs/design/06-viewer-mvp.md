@@ -8,6 +8,7 @@
 - 設定画面で Fine-grained PAT を入れる。対象は `novel-atlas-data` だけ。
   権限: `Contents: Read`、`Pull requests: Read and write`、`Metadata: Read`。
   ラベルの付け外し(`design-approved`)に `Issues: write` が要るかは未確認で、1 段目で確かめる。
+- 設定画面のシートから本体リポジトリ(`Hirayama61/novel-atlas`)に `ready` 付きの改善 Issue を作れる。同じ PAT に `novel-atlas` の `Issues: Read and write` を足す。下書きは端末に残し、送れたときだけ消す。
 - トークンの保存は shogi-atlas の `src/sync/github.ts` と同じ(「記憶する」なら localStorage、しないなら sessionStorage)。
   書き込み権限を持つトークンになるので、外部スクリプトを読まない CSP を入れる。
 - 同期は Git Trees API(`GET /repos/{o}/{r}/git/trees/{ref}?recursive=1`)で全ファイルの SHA を取り、SHA が変わったファイルだけ Contents API で取る。

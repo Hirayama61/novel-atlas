@@ -222,3 +222,20 @@ export function postComment(
 
 export const addLabel = (c: DataRepoConfig, n: number, label: string) =>
   request<unknown>(c, `/issues/${n}/labels`, { method: "POST", body: { labels: [label] } });
+
+// ---- アプリの改善 Issue
+
+/** 改善 Issue の送り先。設定画面の入力値は使わず、ここに固定する */
+export const APP_REPO = { owner: "Hirayama61", repo: "novel-atlas" } as const;
+
+export interface CreatedIssue {
+  number: number;
+  html_url: string;
+}
+
+/** 本体リポジトリに `ready` 付きの Issue を作る。トークンはデータリポジトリと同じものを使う */
+export const createAppIssue = (c: DataRepoConfig, title: string, body: string) =>
+  request<CreatedIssue>({ ...c, ...APP_REPO }, "/issues", {
+    method: "POST",
+    body: { title, body, labels: ["ready"] },
+  });
