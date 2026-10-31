@@ -9,7 +9,12 @@ import {
 } from "../../core/references";
 import { loadConfig } from "../../sync/github";
 import { editReferencesCsv } from "../../sync/references";
-import { isWritePermissionError, REFERENCES_PERMISSION_HINT } from "./referencesPermission";
+import type { SyncResult } from "../useData";
+import {
+  getSyncFailedMessage,
+  isWritePermissionError,
+  REFERENCES_PERMISSION_HINT,
+} from "./referencesPermission";
 
 type OpState =
   | { kind: "idle" }
@@ -21,7 +26,7 @@ interface OwnProps {
   /** 同期済みの `references/works.csv`。無ければ `null` */
   csvText: string | null;
   /** 書き込みのあとに手元を取り直す */
-  onChanged: () => Promise<void>;
+  onChanged: () => Promise<SyncResult>;
 }
 
 /**
@@ -29,6 +34,7 @@ interface OwnProps {
  *
  * @remarks
  * 本文は扱わない(収集は別のルーティン)。一覧の表示は同期済みの中身から毎回作る。
+ * 書き込みのあとの同期に失敗したら、成功とは出さず同期し直すよう促す。
  */
 export function ReferencesSection(props: OwnProps) {
   const { csvText, onChanged } = props;
@@ -49,7 +55,15 @@ export function ReferencesSection(props: OwnProps) {
         setOp({ kind: "failed", message: result.reason, needsPermission: false });
         return;
       }
-      await onChanged();
+      const synced = await onChanged();
+      if (synced.kind === "error") {
+        setOp({
+          kind: "failed",
+          message: getSyncFailedMessage(done, synced.reason),
+          needsPermission: false,
+        });
+        return;
+      }
       setOp({ kind: "done", message: done });
     } catch (e) {
       setOp({

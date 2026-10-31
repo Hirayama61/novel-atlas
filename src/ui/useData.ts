@@ -4,12 +4,15 @@ import { filesOf } from "../db/db";
 import { syncRef } from "../sync/sync";
 import { loadConfig } from "../sync/github";
 
+/** 同期の結果。失敗したときは画面に出す理由を持つ */
+export type SyncResult = { kind: "ok" } | { kind: "error"; reason: string };
+
 export interface DataState {
   data: DataSet | null;
   files: Map<string, string> | null;
   loading: boolean;
   error: string | null;
-  sync: () => Promise<void>;
+  sync: () => Promise<SyncResult>;
   progress: string | null;
 }
 
@@ -28,19 +31,23 @@ export function useData(ref: string): DataState {
     return f;
   }, [ref]);
 
-  const sync = useCallback(async () => {
+  const sync = useCallback(async (): Promise<SyncResult> => {
     const config = loadConfig();
     if (!config.token) {
-      setError("設定でトークンを入れてください");
-      return;
+      const reason = "設定でトークンを入れてください";
+      setError(reason);
+      return { kind: "error", reason };
     }
     setError(null);
     setProgress("同期中…");
     try {
       await syncRef(config, ref, (p) => setProgress(`同期中… ${p.done}/${p.total}`));
       await load();
+      return { kind: "ok" };
     } catch (e) {
-      setError((e as Error).message);
+      const reason = (e as Error).message;
+      setError(reason);
+      return { kind: "error", reason };
     } finally {
       setProgress(null);
     }

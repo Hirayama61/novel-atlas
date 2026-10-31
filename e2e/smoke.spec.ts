@@ -170,6 +170,26 @@ test("ライブラリで参考作品を登録し、二度目と対応しない U
   expect(state.contentPuts[2]!.text).toBe("ncode,title,volumes,note\n");
 });
 
+test("参考作品の登録のあとに同期が失敗したら、登録しましたとは出さず同期し直すよう促す", async ({
+  page,
+}) => {
+  const state = await mockGitHub(page);
+  await page.goto("./");
+  const input = page.getByLabel("作品 URL か ncode");
+  await expect(input).toBeVisible();
+  await page.route(
+    "https://api.github.com/repos/Hirayama61/novel-atlas-data/commits/main",
+    (route) =>
+      route.fulfill({ status: 500, contentType: "application/json", body: '{"message":"boom"}' }),
+  );
+
+  await input.fill("n1234ab");
+  await page.getByRole("button", { name: "登録" }).click();
+  await expect(page.getByRole("alert")).toContainText("手元の同期に失敗");
+  await expect(page.getByText("n1234ab を登録しました", { exact: true })).toHaveCount(0);
+  expect(state.contentPuts).toHaveLength(1);
+});
+
 test("参考作品を「参考」の印つきで開き、投稿用コピー無しで読んで続きの話へ進む", async ({
   page,
 }) => {

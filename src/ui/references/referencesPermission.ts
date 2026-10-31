@@ -13,3 +13,13 @@ export function isWritePermissionError(error: unknown): boolean {
   if (!isGitHubError) return false;
   return PERMISSION_STATUSES.includes(error.status);
 }
+
+/**
+ * 一覧への書き込みは済んだが、そのあとの同期に失敗したときの文言。
+ *
+ * @remarks
+ * 手元の一覧は古いままなので、成功とは出さない。同期し直すのは利用者が「同期」を押す。
+ */
+export function getSyncFailedMessage(done: string, reason: string): string {
+  return `${done}が、手元の同期に失敗したので一覧が古いままです。「同期」を押して同期し直してください(${reason})`;
+}
