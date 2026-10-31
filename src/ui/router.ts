@@ -8,9 +8,28 @@ export type Route =
       tab: "episodes" | "characters" | "timeline" | "threads" | "knowledge";
       ref: string;
     }
-  | { page: "reader"; work: string; ep: number; ref: string; pr: number | null; line?: number }
+  | {
+      page: "reader";
+      work: string;
+      ep: number;
+      ref: string;
+      pr: number | null;
+      line?: number;
+      /** 最初に開くタブ。無ければ本文 */
+      tab?: "design";
+    }
   | { page: "pulls" }
   | { page: "settings" };
+
+/** 読書画面で設計書タブを開くときの `tab` の値 */
+const DESIGN_TAB = "design";
+
+/** 読書画面の `tab` のクエリ。指定が無ければ何も足さない(本文を開く) */
+function toTabQuery(tab: "design" | undefined): Record<string, string> {
+  const hasTab = tab !== undefined;
+  if (!hasTab) return {};
+  return { tab };
+}
 
 const TABS = ["episodes", "characters", "timeline", "threads", "knowledge"] as const;
 
@@ -23,7 +42,7 @@ export function parseHash(hash: string): Route {
     if (parts[2] === "e" && parts[3]) {
       const pr = q.get("pr");
       const line = q.get("line");
-      return {
+      const reader: Route = {
         page: "reader",
         work: parts[1],
         ep: Number(parts[3]),
@@ -31,6 +50,9 @@ export function parseHash(hash: string): Route {
         pr: pr ? Number(pr) : null,
         ...(line ? { line: Number(line) } : {}),
       };
+      const isDesignTab = q.get("tab") === DESIGN_TAB;
+      if (!isDesignTab) return reader;
+      return { ...reader, tab: DESIGN_TAB };
     }
     const tab = (TABS as readonly string[]).includes(parts[2] ?? "")
       ? (parts[2] as (typeof TABS)[number])
@@ -56,6 +78,7 @@ export function href(r: Route): string {
       return `#/w/${encodeURIComponent(r.work)}/e/${r.ep}${q(r.ref, {
         ...(r.pr ? { pr: String(r.pr) } : {}),
         ...(r.line ? { line: String(r.line) } : {}),
+        ...toTabQuery(r.tab),
       })}`;
     case "pulls":
       return "#/pulls";

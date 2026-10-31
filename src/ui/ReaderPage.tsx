@@ -26,12 +26,15 @@ interface Props {
   pr: number | null;
   /** 指定があればこの行を開く(出典リンクから来たとき)。無ければ読了位置 */
   line?: number;
+  /** 最初に開くタブ(「あなたの番」から設計の話を開いたとき)。無ければ本文 */
+  initialTab?: "design";
 }
 
-export function ReaderPage({ work, ep, branch: ref, pr, line }: Props) {
+export function ReaderPage({ work, ep, branch: ref, pr, line, initialTab }: Props) {
   const { data, loading, error, sync, progress } = useData(ref);
   const [settings, update] = useReaderSettings();
-  const [tab, setTab] = useState<"text" | "design">("text");
+  const [chosenTab, setTab] = useState<"text" | "design" | undefined>(undefined);
+  const tab = chosenTab ?? initialTab ?? "text";
   const path = `works/${work}/episodes/${episodeDir(ep)}/text.md`;
   const w = data?.works.get(work);
   const episode = w?.episodes.get(ep);
