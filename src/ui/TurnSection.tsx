@@ -1,54 +1,23 @@
-import { useEffect, useState } from "react";
-import { getTurnItems, TURN_ACTION_LABELS, type TurnItem } from "../core/turn";
-import { listPulls, loadConfig } from "../sync/github";
-import { syncRef } from "../sync/sync";
-import { href } from "./router";
+import { TURN_ACTION_LABELS } from "../core/turn";
+import { useTurnItems } from "./hooks/useTurnItems";
 
 interface Props {
   /** 作品 ID → 題名(main の同期済みデータ)。無い作品は ID のまま出す */
   workTitles: ReadonlyMap<string, string>;
 }
 
+const goTo = (to: string) => window.location.assign(to);
+
 /**
- * ライブラリの先頭の「あなたの番」。open の PR を取り、依頼者がやる番の話を並べる。
+ * ライブラリの先頭の「あなたの番」。依頼者がやる番の話を並べる。
  *
  * @remarks
- * どの PR が番かの判定は持たない(`src/core/turn.ts` が決める)。該当が無ければ何も描かない。
+ * どの PR が番かの判定は持たない(`src/core/turn.ts`)。取得と開く処理は `useTurnItems` が持つ。
+ * 該当が無ければ何も描かない。
  */
 export function TurnSection(props: Props) {
   const { workTitles } = props;
-  const [items, setItems] = useState<TurnItem[]>([]);
-  const [error, setError] = useState<string | null>(null);
-  const [opening, setOpening] = useState<number | null>(null);
-
-  useEffect(() => {
-    listPulls(loadConfig())
-      .then((pulls) => setItems(getTurnItems(pulls)))
-      .catch((e: Error) => setError(e.message));
-  }, []);
-
-  /** PR のブランチを同期してから、その話の読書画面(設計段階なら設計書)へ */
-  const open = async (item: TurnItem) => {
-    setOpening(item.number);
-    try {
-      await syncRef(loadConfig(), item.ref);
-      const designTab = item.tab === "design" ? { tab: "design" as const } : {};
-      window.location.assign(
-        href({
-          page: "reader",
-          work: item.work,
-          ep: item.ep,
-          ref: item.ref,
-          pr: item.number,
-          ...designTab,
-        }),
-      );
-    } catch (e) {
-      setError((e as Error).message);
-    } finally {
-      setOpening(null);
-    }
-  };
+  const { items, error, opening, open } = useTurnItems(goTo);
 
   const hasItems = items.length > 0;
   if (!hasItems && !error) return null;
