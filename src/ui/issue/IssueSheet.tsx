@@ -64,6 +64,7 @@ export function IssueSheet(props: OwnProps) {
         題
         <input
           value={draft.title}
+          disabled={isSending}
           onChange={(e) => updateDraft({ ...draft, title: e.target.value })}
         />
       </label>
@@ -72,6 +73,7 @@ export function IssueSheet(props: OwnProps) {
         <textarea
           rows={6}
           value={draft.body}
+          disabled={isSending}
           onChange={(e) => updateDraft({ ...draft, body: e.target.value })}
         />
       </label>
