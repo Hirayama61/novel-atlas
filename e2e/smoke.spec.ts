@@ -112,3 +112,25 @@ test("設定画面のシートから ready 付きの改善 Issue を作り、失
   });
   await expect(page.getByLabel("題")).toHaveValue("");
 });
+
+test("改善 Issue の送信中は入力と閉じるを無効にし、1 件だけ作る", async ({ page }) => {
+  const state = await mockGitHub(page);
+  let release = () => {};
+  state.holdIssue = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  await page.goto("./#/settings");
+  await page.getByRole("button", { name: "改善 Issue を書く" }).click();
+  await page.getByLabel("題").fill("縦書きの字詰めを細かく選びたい");
+  await page.getByLabel("本文").fill("1 字ずつ選べると読みやすい");
+  await page.getByRole("button", { name: "Issue を作る" }).click();
+
+  await expect(page.getByRole("button", { name: "送信中…" })).toBeDisabled();
+  await expect(page.getByLabel("題")).toBeDisabled();
+  await expect(page.getByLabel("本文")).toBeDisabled();
+  await expect(page.getByRole("button", { name: "閉じる" })).toBeDisabled();
+
+  release();
+  await expect(page.getByText("を作りました")).toBeVisible();
+  expect(state.issues).toHaveLength(1);
+});

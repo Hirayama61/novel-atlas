@@ -11,6 +11,8 @@ export interface MockState {
   issues: unknown[];
   /** 次の Issue 作成に返す状態。200 以外なら失敗させる */
   issueStatus: number;
+  /** あれば、Issue 作成の応答をこの Promise が解決するまで待たせる */
+  holdIssue?: Promise<void>;
 }
 
 const PR_BRANCH = "ep/lh/003";
@@ -92,6 +94,7 @@ export async function mockGitHub(page: Page): Promise<MockState> {
     if (state.issueStatus !== 200)
       return json(route, { message: "Resource not accessible" }, state.issueStatus);
     state.issues.push(route.request().postDataJSON());
+    await state.holdIssue;
     return json(route, { number: 42, html_url: "https://github.com/x/y/issues/42" }, 201);
   });
 
