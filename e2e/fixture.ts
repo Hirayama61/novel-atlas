@@ -28,6 +28,21 @@ const PR_TEXT = `# 第3話 灯を消す
 　ミオは灯を消した。
 `;
 
+/** 参考作品(架空)の ncode と、取得済みの 2 話。ルビはなろう記法 */
+export const REFERENCE_NCODE = "n9999zz";
+export const REFERENCE_EPISODES = [
+  "　潮が引くと、｜岬《みさき》の下に石の道が出た。\n　少年はその道を数えた。\n",
+  "　二度目の干潮で、道の先に小屋が見えた。\n",
+];
+const REFERENCE_FILES: [string, string][] = [
+  [`references/${REFERENCE_NCODE}/meta.json`, JSON.stringify({ title: "潮見の道" })],
+  [`references/${REFERENCE_NCODE}/fetch-state.json`, "{}"],
+  ...REFERENCE_EPISODES.map((text, i): [string, string] => [
+    `references/${REFERENCE_NCODE}/episodes/${String(i + 1).padStart(3, "0")}.md`,
+    text,
+  ]),
+];
+
 /** データリポジトリ(架空の作品)と PR 1 本をモックする */
 export async function mockGitHub(page: Page): Promise<MockState> {
   const state: MockState = {
@@ -38,7 +53,7 @@ export async function mockGitHub(page: Page): Promise<MockState> {
     contentPuts: [],
     contentPutStatuses: [],
   };
-  const main = new Map(FILES);
+  const main = new Map([...FILES, ...REFERENCE_FILES]);
   const branch = new Map([
     ...FILES,
     ["works/lh/episodes/003/design.yaml", DESIGN_3],

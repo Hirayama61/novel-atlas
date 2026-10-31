@@ -18,6 +18,8 @@ export type Route =
       /** 最初に開くタブ。無ければ本文 */
       tab?: "design";
     }
+  | { page: "reference"; ncode: string }
+  | { page: "referenceReader"; ncode: string; ep: number }
   | { page: "pulls" }
   | { page: "settings" };
 
@@ -59,6 +61,11 @@ export function parseHash(hash: string): Route {
       : "episodes";
     return { page: "work", work: parts[1], tab, ref };
   }
+  if (parts[0] === "r" && parts[1]) {
+    const isEpisode = parts[2] === "e" && parts[3] !== undefined;
+    if (!isEpisode) return { page: "reference", ncode: parts[1] };
+    return { page: "referenceReader", ncode: parts[1], ep: Number(parts[3]) };
+  }
   if (parts[0] === "pulls") return { page: "pulls" };
   if (parts[0] === "settings") return { page: "settings" };
   return { page: "library" };
@@ -80,6 +87,10 @@ export function href(r: Route): string {
         ...(r.line ? { line: String(r.line) } : {}),
         ...toTabQuery(r.tab),
       })}`;
+    case "reference":
+      return `#/r/${encodeURIComponent(r.ncode)}`;
+    case "referenceReader":
+      return `#/r/${encodeURIComponent(r.ncode)}/e/${r.ep}`;
     case "pulls":
       return "#/pulls";
     case "settings":

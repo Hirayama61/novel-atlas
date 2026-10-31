@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { mockGitHub } from "./fixture";
+import { mockGitHub, REFERENCE_NCODE } from "./fixture";
 
 test("同期して作品を開き、本文を縦書きで読む", async ({ page }) => {
   await mockGitHub(page);
@@ -168,4 +168,26 @@ test("ライブラリで参考作品を登録し、二度目と対応しない U
   await expect(page.getByText("n1234ab を一覧から外しました")).toBeVisible();
   await expect(page.getByText("登録した作品はまだありません。")).toBeVisible();
   expect(state.contentPuts[2]!.text).toBe("ncode,title,volumes,note\n");
+});
+
+test("参考作品を「参考」の印つきで開き、投稿用コピー無しで読んで続きの話へ進む", async ({
+  page,
+}) => {
+  await mockGitHub(page);
+  await page.goto("./");
+  const item = page.locator("ul.works li", { hasText: "潮見の道" });
+  await expect(item.locator(".tag")).toHaveText("参考");
+  await item.getByRole("link", { name: "潮見の道" }).click();
+  await page.getByRole("link", { name: "第1話" }).click();
+
+  await expect(page.getByText("少年はその道を数えた。")).toBeVisible();
+  await expect(page.locator("ruby", { hasText: "岬" }).locator("rt")).toHaveText("みさき");
+  await expect(page.getByRole("button", { name: "投稿用にコピー" })).toHaveCount(0);
+  await page.getByRole("button", { name: "縦書き" }).click();
+  await expect(page.locator(".text.vertical")).toBeVisible();
+
+  await page.getByRole("link", { name: "続きの話へ(第2話)" }).click();
+  await expect(page).toHaveURL(new RegExp(`#/r/${REFERENCE_NCODE}/e/2$`));
+  await expect(page.getByText("道の先に小屋が見えた。")).toBeVisible();
+  await expect(page.getByRole("link", { name: /続きの話へ/ })).toHaveCount(0);
 });

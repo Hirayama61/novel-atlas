@@ -1,5 +1,7 @@
 import { LibraryPage } from "./ui/LibraryPage";
 import { PullsPage } from "./ui/PullsPage";
+import { ReferencePage } from "./ui/references/ReferencePage";
+import { ReferenceReaderPage } from "./ui/references/ReferenceReaderPage";
 import { ReaderPage } from "./ui/ReaderPage";
 import { SettingsPage } from "./ui/SettingsPage";
 import { WorkPage } from "./ui/WorkPage";
@@ -7,8 +9,9 @@ import { href, useRoute } from "./ui/router";
 
 export default function App() {
   const route = useRoute();
+  const isReading = route.page === "reader" || route.page === "referenceReader";
   return (
-    <div className={`app ${route.page === "reader" ? "reading" : ""}`}>
+    <div className={`app ${isReading ? "reading" : ""}`}>
       <header>
         <a className="brand" href={href({ page: "library" })}>
           Novel Atlas
@@ -32,6 +35,14 @@ export default function App() {
             pr={route.pr}
             line={route.line}
             initialTab={route.tab}
+          />
+        ) : null}
+        {route.page === "reference" ? <ReferencePage ncode={route.ncode} /> : null}
+        {route.page === "referenceReader" ? (
+          <ReferenceReaderPage
+            key={`${route.ncode}:${route.ep}`}
+            ncode={route.ncode}
+            ep={route.ep}
           />
         ) : null}
         {route.page === "pulls" ? <PullsPage /> : null}

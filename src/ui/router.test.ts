@@ -22,3 +22,21 @@ describe("読書画面のタブ", () => {
     expect(href(route)).toBe("#/w/lh/e/3?pr=3");
   });
 });
+
+describe("参考作品のルート", () => {
+  it("話の一覧と読書画面を読む", () => {
+    expect(parseHash("#/r/n1111aa")).toEqual({ page: "reference", ncode: "n1111aa" });
+    expect(parseHash("#/r/n1111aa/e/3")).toEqual({
+      page: "referenceReader",
+      ncode: "n1111aa",
+      ep: 3,
+    });
+  });
+  it("書いた URL を読み戻すと同じルートになる", () => {
+    const routes = [
+      { page: "reference", ncode: "n1111aa" },
+      { page: "referenceReader", ncode: "n1111aa", ep: 12 },
+    ] as const;
+    for (const route of routes) expect(parseHash(href(route))).toEqual(route);
+  });
+});

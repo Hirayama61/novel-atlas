@@ -1,3 +1,4 @@
+import { getReferenceShelf } from "../core/reference-shelf";
 import { REFERENCES_CSV_PATH } from "../core/references";
 import { loadConfig } from "../sync/github";
 import { ReferencesSection } from "./references/ReferencesSection";
@@ -18,6 +19,8 @@ export function LibraryPage() {
   const works = [...(data?.works.values() ?? [])].filter((w) => w.work);
   const referencesCsv = files?.get(REFERENCES_CSV_PATH) ?? null;
   const workTitles = new Map(works.map((w) => [w.id, w.work!.title]));
+  const shelf = getReferenceShelf(files ?? new Map());
+  const isEmpty = !works.length && !shelf.length;
   return (
     <div>
       <TurnSection workTitles={workTitles} />
@@ -43,8 +46,15 @@ export function LibraryPage() {
             </li>
           );
         })}
+        {shelf.map((r) => (
+          <li key={r.ncode}>
+            <span className="tag">参考</span>
+            <a href={href({ page: "reference", ncode: r.ncode })}>{r.title}</a>
+            <span className="muted"> {r.episodes.length} 話</span>
+          </li>
+        ))}
       </ul>
-      {!works.length ? <p className="muted">作品がありません。同期してください。</p> : null}
+      {isEmpty ? <p className="muted">作品がありません。同期してください。</p> : null}
       <ReferencesSection csvText={referencesCsv} onChanged={sync} />
     </div>
   );

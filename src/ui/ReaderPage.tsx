@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { buildCommentBody, commentText, isBotComment } from "../core/comment";
 import { episodeDir } from "../core/data/files";
 import { postingStats, toPostingText } from "../core/posting";
@@ -14,6 +14,8 @@ import {
   type ReviewComment,
 } from "../sync/github";
 import { DesignView } from "./DesignView";
+import { useReadingPosition } from "./hooks/useReadingPosition";
+import { ReaderSettingsControls } from "./ReaderSettingsControls";
 import { href } from "./router";
 import { TextView, type LineMark } from "./TextView";
 import { useReaderSettings } from "./readerSettings";
@@ -42,21 +44,8 @@ export function ReaderPage({ work, ep, branch: ref, pr, line, initialTab }: Prop
   const posKey = `${ref}:${path}`;
 
   // 読了位置
-  const [savedLine, setSavedLine] = useState<number | null>(null);
-  useEffect(() => {
-    void db.positions.get(posKey).then((p) => setSavedLine(p?.line ?? null));
-  }, [posKey]);
+  const { savedLine, onTopLine } = useReadingPosition(posKey);
   const initialLine = line ?? savedLine;
-  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const onTopLine = useCallback(
-    (line: number) => {
-      if (saveTimer.current) clearTimeout(saveTimer.current);
-      saveTimer.current = setTimeout(() => {
-        void db.positions.put({ key: posKey, line, updatedAt: new Date().toISOString() });
-      }, 500);
-    },
-    [posKey],
-  );
 
   // PR
   const [pull, setPull] = useState<PullRequest | null>(null);
@@ -235,42 +224,7 @@ export function ReaderPage({ work, ep, branch: ref, pr, line, initialTab }: Prop
     <div className="reader">
       <div className="toolbar">
         <a href={href({ page: "work", work, tab: "episodes", ref })}>← 一覧</a>
-        <button onClick={() => update({ vertical: !settings.vertical })}>
-          {settings.vertical ? "横書き" : "縦書き"}
-        </button>
-        <label>
-          字詰め
-          <select
-            value={settings.charsPerLine}
-            onChange={(e) => update({ charsPerLine: Number(e.target.value) })}
-          >
-            {[20, 24, 28, 32, 36, 40, 48].map((n) => (
-              <option key={n}>{n}</option>
-            ))}
-          </select>
-        </label>
-        <label>
-          文字
-          <select
-            value={settings.fontSize}
-            onChange={(e) => update({ fontSize: Number(e.target.value) })}
-          >
-            {[14, 16, 18, 20, 22, 24].map((n) => (
-              <option key={n}>{n}</option>
-            ))}
-          </select>
-        </label>
-        <label>
-          行間
-          <select
-            value={settings.lineHeight}
-            onChange={(e) => update({ lineHeight: Number(e.target.value) })}
-          >
-            {[1.6, 1.8, 1.9, 2.1, 2.4].map((n) => (
-              <option key={n}>{n}</option>
-            ))}
-          </select>
-        </label>
+        <ReaderSettingsControls settings={settings} onChange={update} />
         {text && !pr ? <button onClick={copyForPosting}>投稿用にコピー</button> : null}
         <button onClick={() => void sync()} disabled={!!progress}>
           {progress ?? "同期"}
