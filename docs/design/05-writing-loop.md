@@ -52,7 +52,7 @@
 | novel-atlas 他作品収集 | 1 日 1 回 | `/collect-references` | なろうから未取得の話を取る(2.5 秒/リクエスト・全年齢のみ・既取得は取らない)。1 回 50 分まで、外側の `timeout` 65 分 |
 | novel-atlas 他作品解析 | 1 日 1 回 | `/analyze-references` | 取得済みの話を 20 話ずつ claims 形式で抽出し、`references/<ncode>/analysis/` を更新 |
 | novel-atlas 見守り | 毎朝 | `/monitor-routines` | 下の「見守り」 |
-| novel-atlas Issue 作業 | 1 時間おき | `/work-issue` | `novel-atlas` 本体の `ready` Issue を 1 件(shogi-atlas と同じ) |
+| novel-atlas Issue 作業 | 1 時間おき | `/polaris-dev` | `novel-atlas` 本体の `ready` Issue を 1 件 |
 
 各ルーティンは 1 回の実行で 1 件だけ扱い、終わったら次を拾わずに報告して終える(shogi-atlas の `/work-issue` と同じ)。
 急ぐときは依頼者が Routines 画面から手動実行する。

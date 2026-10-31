@@ -50,9 +50,26 @@ pnpm schemas
 - 作業セッションにはデータリポジトリの clone が `/home/user/novel-atlas-data` にある。無ければ `add_repo`(owner: Hirayama61, repo: novel-atlas-data, access: push)で接続してから clone する。
 - 定期処理をデータリポジトリの Actions に載せない(private の無料枠を消費する)。Actions は PR ごとの検査(`check.yml`)だけ。
 
-## Issue 駆動の運用(このリポジトリの開発)
+## 開発の流れ
 
-- GitHub の操作は `gh api`(REST)で行う。`gh issue ...` / `gh pr ...` は GraphQL を使うためクラウドの環境では失敗する。
-- やりたいことは Issue にする。状態はラベル: `ready` → `in-progress` → 閉じて完了。人の判断待ちは `needs-input`。
-- 領域ラベル `area:core` / `area:app` / `area:scripts` / `area:infra` / `area:data` で衝突を避ける。同じ領域の Issue を同時に 2 つ進めない。
-- 着手は `/work-issue` の手順で。
+- 要望はこのリポジトリの Issue にする。公開リポジトリなので、未公開の設定は書かない (上の「絶対に守ること」)。
+- クラウドの開発ループは `ready` の Issue だけを扱う。Issue 1 件につきブランチ `claude/issue-<番号>` と PR 1 本。
+- レビュー係が `approved` を付け、CI (check) が通ると automerge がマージする。人が止めたいときは PR に `hold` を付ける。
+- GitHub の操作は `gh api` (REST) で行う。`gh issue ...` / `gh pr ...` は GraphQL を使うためクラウドの環境では失敗する。
+- `pnpm check`、`pnpm build` が通らない変更は出さない。画面や同期に触ったら `pnpm build && pnpm e2e` も通す。
+
+レビューと修正の基準は AGENTS.md にある。
+
+## ラベル
+
+| ラベル       | 意味                                      |
+| ------------ | ----------------------------------------- |
+| `ready`      | 整理済み。開発ループが実装してよい        |
+| `needs-info` | 質問中。答えは Issue のコメントに書く     |
+| `split`      | 小さな Issue に分割した元。閉じるのは人   |
+| `hold`       | 人の判断待ち。ループは触らない            |
+| `human`      | 人がやる Issue。ループは触らない          |
+| `approved`   | (PR) レビュー係が承認した                 |
+| `needs-fix`  | (PR) レビューの指摘あり。開発ループが直す |
+
+領域ラベル (`area:*`) は残してよいが、ループは見ない。
