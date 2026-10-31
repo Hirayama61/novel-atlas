@@ -3,7 +3,7 @@
 export interface DataRepoConfig {
   owner: string;
   repo: string;
-  /** Fine-grained PAT。対象は novel-atlas-data だけ。Contents: Read、Pull requests: Read and write */
+  /** Fine-grained PAT。対象は novel-atlas-data。Contents: Read and write、Pull requests: Read and write */
   token: string;
   /** false のときはトークンを localStorage に保存しない */
   remember: boolean;
@@ -126,6 +126,59 @@ export function getBlob(config: DataRepoConfig, sha: string): Promise<string> {
   return request<string>(config, `/git/blobs/${sha}`, {
     accept: "application/vnd.github.raw+json",
   });
+}
+
+// ---- Contents API(参考作品の一覧を書く)
+
+export interface FileContent {
+  /** 今の blob の SHA。書き戻すときに渡す */
+  sha: string;
+  text: string;
+}
+
+/** ファイルが無いことを表す状態 */
+const NOT_FOUND = 404;
+
+/** main のファイルを 1 つ読む。無ければ `null` */
+export async function getFileContent(c: DataRepoConfig, path: string): Promise<FileContent | null> {
+  try {
+    const f = await request<{ sha: string; content: string }>(
+      c,
+      `/contents/${encodeContentsPath(path)}?ref=main`,
+    );
+    return { sha: f.sha, text: decodeBase64Utf8(f.content) };
+  } catch (e) {
+    const isNotFound = e instanceof GitHubError && e.status === NOT_FOUND;
+    if (isNotFound) return null;
+    throw e;
+  }
+}
+
+/** main のファイルを書き換えて 1 コミットにする。新しく作るときは `sha` を `null` にする */
+export const putFileContent = (
+  c: DataRepoConfig,
+  path: string,
+  text: string,
+  message: string,
+  sha: string | null,
+) =>
+  request<unknown>(c, `/contents/${encodeContentsPath(path)}`, {
+    method: "PUT",
+    body: { message, content: encodeBase64Utf8(text), branch: "main", ...(sha ? { sha } : {}) },
+  });
+
+function encodeContentsPath(path: string): string {
+  return path.split("/").map(encodeURIComponent).join("/");
+}
+
+function encodeBase64Utf8(text: string): string {
+  const bytes = new TextEncoder().encode(text);
+  return btoa(Array.from(bytes, (b) => String.fromCharCode(b)).join(""));
+}
+
+function decodeBase64Utf8(base64: string): string {
+  const binary = atob(base64.replace(/\s/g, ""));
+  return new TextDecoder().decode(Uint8Array.from(binary, (ch) => ch.charCodeAt(0)));
 }
 
 // ---- PR

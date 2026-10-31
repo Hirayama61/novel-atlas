@@ -31,9 +31,10 @@ export function SettingsPage() {
         />
       </label>
       <p className="muted">
-        対象は novel-atlas-data と novel-atlas にする。novel-atlas-data には Contents: Read、Pull
-        requests: Read and write、Metadata: Read を付ける。改善 Issue を作るなら、novel-atlas に
-        Issues: Read and write を足す。
+        対象は novel-atlas-data と novel-atlas にする。novel-atlas-data には Contents: Read and
+        write、Pull requests: Read and write、Metadata: Read を付ける。改善 Issue
+        を作るなら、novel-atlas に Issues: Read and write を足す。Contents
+        の書き込みは参考作品の一覧(references/works.csv)を書くのに使う。
       </p>
       <label className="row">
         <input
