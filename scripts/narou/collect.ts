@@ -30,9 +30,14 @@ export interface WorkState {
   episodes: number | null;
   /** 置いてある話の数 */
   fetched: number;
+  /** 消えた(404/410 を返した)話の番号。次の回からは取りに行かない */
+  gone: number[];
   /** 失敗の理由。失敗していなければ持たない */
   reason?: string;
 }
+
+/** 前回の進捗に消えた話の欄が無いとき(欄を足す前の `fetch-state.json`) */
+const NO_GONE: number[] = [];
 
 export interface CollectSummary {
   /** この回に取った話の数 */
@@ -71,12 +76,15 @@ export async function collectReferences(
   const summary: CollectSummary = { fetched: 0, stoppedBy: null, works: {} };
   for (const work of works) {
     const ncode = work.ncode;
-    const prevEpisodes = previous[ncode]?.episodes ?? null;
+    const prev = previous[ncode];
+    const prevEpisodes = prev?.episodes ?? null;
+    const prevGone = prev?.gone ?? NO_GONE;
     if (summary.stoppedBy !== null) {
-      summary.works[ncode] = pendingState(dataDir, ncode, prevEpisodes);
+      summary.works[ncode] = pendingState(dataDir, ncode, prevEpisodes, prevGone);
       continue;
     }
-    const outcome = await collectWork(dataDir, ncode, prevEpisodes, budget, client, clock, summary);
+    const known = { episodes: prevEpisodes, gone: prevGone };
+    const outcome = await collectWork(dataDir, ncode, known, budget, client, clock, summary);
     summary.works[ncode] = outcome.state;
     if (outcome.kind === "stop") summary.stoppedBy = outcome.reason;
   }
@@ -94,37 +102,49 @@ function readWorks(dataDir: string) {
 async function collectWork(
   dataDir: string,
   rawNcode: string,
-  prevEpisodes: number | null,
+  known: { episodes: number | null; gone: number[] },
   budget: Budget,
   client: PoliteClient,
   clock: Clock,
   summary: CollectSummary,
 ): Promise<WorkOutcome> {
+  const prevEpisodes = known.episodes;
+  const gone = [...known.gone];
   const parsed = parseNcode(rawNcode);
   if (parsed.kind === "error") {
-    const state = failWork(dataDir, rawNcode, prevEpisodes, parsed.reason, clock);
+    const state = failWork(dataDir, rawNcode, prevEpisodes, gone, parsed.reason, clock);
     return { kind: "done", state };
   }
   const ncode = parsed.ncode;
   const stopReason = getStopReason(budget, summary.fetched, clock.now());
   if (stopReason !== null)
-    return { kind: "stop", state: pendingState(dataDir, ncode, prevEpisodes), reason: stopReason };
+    return {
+      kind: "stop",
+      state: pendingState(dataDir, ncode, prevEpisodes, gone),
+      reason: stopReason,
+    };
   try {
     const metaRes = await client.get(getNovelMetaUrl(ncode));
     if (metaRes.kind === "http-error") {
       const reason = `作品情報の取得で HTTP ${metaRes.status}`;
-      const state = failWork(dataDir, ncode, prevEpisodes, reason, clock);
+      const state = failWork(dataDir, ncode, prevEpisodes, gone, reason, clock);
       return toOutcome(state, metaRes.status, reason);
     }
     const meta = parseNovelMeta(metaRes.body);
     if (meta.kind === "error")
-      return { kind: "done", state: failWork(dataDir, ncode, prevEpisodes, meta.reason, clock) };
+      return {
+        kind: "done",
+        state: failWork(dataDir, ncode, prevEpisodes, gone, meta.reason, clock),
+      };
     writeText(dataDir, `references/${ncode}/meta.json`, `${JSON.stringify(meta.meta, null, 2)}\n`);
     const missing = getMissingEpisodes(dataDir, ncode, meta.episodeCount);
-    for (const episode of missing) {
+    const toFetch = getEpisodesToFetch(missing, gone);
+    for (const episode of toFetch) {
       const stop = getStopReason(budget, summary.fetched, clock.now());
-      if (stop !== null)
-        return { kind: "stop", state: workState(dataDir, ncode, meta.episodeCount), reason: stop };
+      if (stop !== null) {
+        const state = workState(dataDir, ncode, meta.episodeCount, gone);
+        return { kind: "stop", state, reason: stop };
+      }
       const url = getEpisodeUrl(ncode, episode, meta.isShortStory);
       const res = await client.get(url);
       if (res.kind === "http-error") {
@@ -132,24 +152,27 @@ async function collectWork(
         const isGone = GONE_STATUSES.includes(res.status);
         if (isGone) {
           appendFetchLog(dataDir, ncode, String(episode), `${reason}(削除・非公開。飛ばす)`, clock);
+          gone.push(episode);
           continue;
         }
-        const state = failWork(dataDir, ncode, meta.episodeCount, reason, clock, String(episode));
+        const count = meta.episodeCount;
+        const state = failWork(dataDir, ncode, count, gone, reason, clock, String(episode));
         return toOutcome(state, res.status, reason);
       }
       const text = extractEpisodeText(res.body);
       if (text === null) {
         const reason = "本文が見つかりません(ページの作りが変わった可能性)";
-        const state = failWork(dataDir, ncode, meta.episodeCount, reason, clock, String(episode));
+        const count = meta.episodeCount;
+        const state = failWork(dataDir, ncode, count, gone, reason, clock, String(episode));
         return { kind: "done", state };
       }
       writeText(dataDir, getEpisodePath(ncode, episode), text);
       summary.fetched++;
     }
-    return { kind: "done", state: workState(dataDir, ncode, meta.episodeCount) };
+    return { kind: "done", state: workState(dataDir, ncode, meta.episodeCount, gone) };
   } catch (error) {
     const reason = `通信の失敗: ${toMessage(error)}`;
-    return { kind: "done", state: failWork(dataDir, ncode, prevEpisodes, reason, clock) };
+    return { kind: "done", state: failWork(dataDir, ncode, prevEpisodes, gone, reason, clock) };
   }
 }
 
@@ -175,33 +198,76 @@ export function getMissingEpisodes(dataDir: string, ncode: string, count: number
   return all.filter((episode) => !existsSync(join(dataDir, getEpisodePath(ncode, episode))));
 }
 
+/** 置いていない話のうち、消えたと分かっている話を除いたもの(取りに行く話) */
+export function getEpisodesToFetch(missing: number[], gone: number[]): number[] {
+  return missing.filter((episode) => !gone.includes(episode));
+}
+
+/**
+ * 消えた話のうち、まだ置いていないものだけを残す。
+ *
+ * @remarks
+ * 話数が減って範囲の外になった番号と、後から本文を置いた番号は `missing` に無いので落ちる。
+ */
+export function getCurrentGone(gone: number[], missing: number[]): number[] {
+  return gone.filter((episode) => missing.includes(episode));
+}
+
 function countFetched(dataDir: string, ncode: string, count: number | null): number {
   if (count === null) return 0;
   return count - getMissingEpisodes(dataDir, ncode, count).length;
 }
 
-function workState(dataDir: string, ncode: string, count: number): WorkState {
-  const fetched = countFetched(dataDir, ncode, count);
-  const isComplete = fetched >= count;
-  if (isComplete) return { status: "完了", episodes: count, fetched };
-  return { status: "途中", episodes: count, fetched };
+/** 話数が分かっていれば範囲と置いた話で絞る。分からなければ前回のまま持ち越す */
+function keepGone(dataDir: string, ncode: string, count: number | null, gone: number[]): number[] {
+  if (count === null) return gone;
+  return getCurrentGone(gone, getMissingEpisodes(dataDir, ncode, count));
 }
 
-function pendingState(dataDir: string, ncode: string, count: number | null): WorkState {
-  return { status: "未着手", episodes: count, fetched: countFetched(dataDir, ncode, count) };
+/** 消えた話を除いて全部置いてあれば完了 */
+function workState(dataDir: string, ncode: string, count: number, gone: number[]): WorkState {
+  const missing = getMissingEpisodes(dataDir, ncode, count);
+  const currentGone = getCurrentGone(gone, missing);
+  const fetched = count - missing.length;
+  const isComplete = getEpisodesToFetch(missing, currentGone).length === 0;
+  if (isComplete) return { status: "完了", episodes: count, fetched, gone: currentGone };
+  return { status: "途中", episodes: count, fetched, gone: currentGone };
+}
+
+function pendingState(
+  dataDir: string,
+  ncode: string,
+  count: number | null,
+  gone: number[],
+): WorkState {
+  const fetched = countFetched(dataDir, ncode, count);
+  return {
+    status: "未着手",
+    episodes: count,
+    fetched,
+    gone: keepGone(dataDir, ncode, count, gone),
+  };
 }
 
 function failWork(
   dataDir: string,
   ncode: string,
   count: number | null,
+  gone: number[],
   reason: string,
   clock: Clock,
   episode = WHOLE_WORK,
 ): WorkState {
   const isValidDir = parseNcode(ncode).kind === "ok";
   if (isValidDir) appendFetchLog(dataDir, ncode, episode, reason, clock);
-  return { status: "失敗", episodes: count, fetched: countFetched(dataDir, ncode, count), reason };
+  const fetched = countFetched(dataDir, ncode, count);
+  return {
+    status: "失敗",
+    episodes: count,
+    fetched,
+    gone: keepGone(dataDir, ncode, count, gone),
+    reason,
+  };
 }
 
 function appendFetchLog(
