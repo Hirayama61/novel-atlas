@@ -41,16 +41,26 @@
 - 設定資料集・知識表・時系列表・伏線表。採点の推移グラフ。
 - 見守りに「依頼者が初めて見つけた機械検出可能な指摘」の集計と、規則化 Issue の起案を足す。
 
-## 3 段目: 他作品の収集と解析
+## 3 段目: 参考作品の登録・収集・読書・AI の参照
 
-到達点: 他作品の登場人物・時系列・伏線が自作と同じ画面で見られ、話設計の参考に引ける。
+到達点: 作者が好きな作品をアプリで登録すると本文がデータリポジトリに溜まり、自作と同じ読書画面でスマホから読め、話設計のときに AI が参考に引ける。
+小説は Polaris から切り離し、novel-atlas で完結させる(Polaris の `library/novel/` は廃止。01)。
 
-- `novel-analytics/cache/` の本文を `references/` に取り込む(ネットワークを使わない)。
-- `scripts/narou/` に取得作法を移植(2.5 秒/リクエスト・全年齢のみ・既取得は取らない・`meta.json` は毎回取る)し、収集ルーティンを作る。
+1. 登録: ライブラリから小説家になろうの作品 URL か ncode を登録し、`references/works.csv` に 1 行足す。二度登録しない。一覧から外せる。
+   PAT に `novel-atlas-data` の `Contents: Read and write` が要るので、08 の Q4 の権限の範囲を見直す。
+2. 収集: `scripts/narou/` に取得作法(2.5 秒/リクエスト・全年齢のみ・既取得は取り直さない・`meta.json` は毎回取る)を書き、収集スキル `/collect-references` とそのルーティンを作る。
+   本文は `references/<ncode>/episodes/`、作品情報は `references/<ncode>/meta.json` に置く。
+   `novel-analytics/cache/` の本文もここに取り込む(ネットワークを使わない)。
+3. 読書: 同期の対象に `references/*/episodes/**` と `references/*/meta.json` を足し、自作と同じ読書画面で読む(06)。
+   ビルド成果物に本文が入らないことをテストで確かめる。
+4. AI の参照: 話設計書の `references` 欄と、設計時に `references/` から参考になる箇所を引く手順を `/write-episode` に足す。
+   本文を転記せず、構成の観察に留める。隔離レビュアーのバンドルに参考作品の本文が入らないことを `isolate.test.ts` で確かめる。
+
+解析と統計は 4 つの後に回す。
+
 - 解析ルーティン: 20 話ずつ claims 形式で抽出し、`references/<ncode>/analysis/` の characters・timeline・threads を育てる。
   他作品の解析結果はすべて `status: 仮` とし、出典は話番号と引用で持つ。
 - 字数・会話量などの統計(旧 `novel-analytics` の T1・T2)を `stats.json` に。
-- 話設計書の `references` 欄と、設計時に似た構造の他作品の箇所を引く手順を `/write-episode` に足す。
 
 ## 4 段目: 複数連載
 
