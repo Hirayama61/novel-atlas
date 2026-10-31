@@ -46,15 +46,20 @@ gh api "$R/pulls?state=open&per_page=50" --jq '.[] | "#\(.number) \(.head.ref) [
 
 1. ブランチ `ep/<作品>/<NNN>` を作る。
 2. 読む: 版の方針(`work.yaml` の editions で status current の `doc`)、`CLAUDE.md`、`$D/craft/*.md`(preferences・style-norms・story-principles・glossary)、`$D/works/<作品>/charter.md`・`arcs.yaml`・`handoff.yaml`・`canon/*`、直近 3 話の `text.md` と `design.yaml`、直近の `feedback/*.yaml`(依頼者の好み・指摘の傾向)。
-3. `$D/works/<作品>/episodes/<NNN>/design.yaml` を書く(スキーマは `$A/src/core/schema/episode.ts`、説明は `$A/docs/design/04-episode-design-schema.md`)。
+3. 参考作品を引く(任意。`$D/references/` が無いか空なら飛ばす):
+   - 読むのは `$D/references/works.csv`・`<ncode>/meta.json`・`<ncode>/episodes/<NNN>.md` だけ。`analysis/` と統計は使わない。取得はしない(収集は `collect-references` の仕事)。
+   - この話の型・山の位置・場面の運びに近い話を 1〜3 本選び、構成(場面の数と順、視点の置き方、引きの作り方、字数の配分)を観察する。
+   - **本文を転記しない。** design.yaml・PR 本文・コメント・commit メッセージに参考作品の文章を引用せず、言い換えた文も書かない。残すのは構成の観察だけ。
+   - 引いたものは design.yaml の `references` に `{ work: <ncode>, item: ep:<話番号>, note: <構成の観察 1 行> }` で残す。参考にしなかったら欄を書かない。
+4. `$D/works/<作品>/episodes/<NNN>/design.yaml` を書く(スキーマは `$A/src/core/schema/episode.ts`、説明は `$A/docs/design/04-episode-design-schema.md`)。
    - `budget.total` は `work.yaml` の `length.target_chars` を目安にし、`length.max_chars` を超えない(CI が落とす)。
    - 現行版の話だけが対象(`works/<作品>/episodes/`)。旧版(`archive/editions/`)は参照資料で、話数も現行版とは別。
    - `handoff.yaml` の、この話を `target` にした `open` の項目をすべて `handoff_in` で扱う(consume / defer / drop と理由)。
    - `type.label` は直近 2 話と変える。`type.breaks` で、直近と同じビートにしないための崩し方を書く。
    - この話で新しく必要な canon の項目(人物・場所・出来事・伏線・知識)は、canon のファイルに `status: 仮` で足す。
-4. 検査: `DATA_DIR=$D pnpm --dir $A -s check-data --work <作品> --episode <N> --only schema,design,canon`。エラーが 0 になるまで直す。
-5. `story-consistency-reviewer` に設計を見せる(作品 ID・話数・DATA のパス・対象 = 設計)。指摘を三角分けして反映し、却下したものは `rejected` に理由つきで書く。
-6. commit(`feat(<作品>): 第N話の話設計書`)して push し、PR を作る:
+5. 検査: `DATA_DIR=$D pnpm --dir $A -s check-data --work <作品> --episode <N> --only schema,design,canon`。エラーが 0 になるまで直す。
+6. `story-consistency-reviewer` に設計を見せる(作品 ID・話数・DATA のパス・対象 = 設計)。指摘を三角分けして反映し、却下したものは `rejected` に理由つきで書く。
+7. commit(`feat(<作品>): 第N話の話設計書`)して push し、PR を作る:
    ```sh
    gh api -X POST "$R/pulls" -f title="[<作品>] 第N話 <title.working>" -f head="ep/<作品>/<NNN>" -f base=main -F body=@<本文ファイル>
    gh api -X POST "$R/issues/<PR番号>/labels" -f 'labels[]=stage:design'

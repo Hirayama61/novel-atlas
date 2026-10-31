@@ -110,8 +110,8 @@ handoff_in:                      # 申し送り(handoff.yaml の ID)の扱い
   - { id: H-7-03, action: consume, how: s3 で回収 }
   - { id: H-7-05, action: defer, to: 8, why: 本話の型と合わない }
 
-references:                      # 他作品の解析結果を参考にした箇所(3 段目)
-  - { work: n0000xx, item: threads.T12, note: 中盤の山の割り方 }
+references:                      # 参考作品(データリポジトリの references/)から構成を観察した箇所
+  - { work: n0000xx, item: ep:12, note: 中盤の山の割り方 }   # item は話番号(ep:N)。note は構成の観察だけで、本文を引用しない
 
 rejected:                        # 却下した案と理由(旧・却下節)
   - what: 父を嵐で死なせる

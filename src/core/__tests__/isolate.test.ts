@@ -13,6 +13,9 @@ const repo = new Map<string, string>([
     "# 観点\n\n## A. 整合性\n- 封印を読む\n\n## C. 読者体験\n- C1 面白いか\n\n## D. 下読み\n- D1 判定\n",
   ],
   ["craft/rubric.md", "# ルーブリック\n"],
+  ["references/works.csv", "ncode,title\nn0000aa,参考作品の題\n"],
+  ["references/n0000aa/meta.json", '{"title":"参考作品の題"}\n'],
+  ["references/n0000aa/episodes/001.md", "# 参考の第1話\n　参考作品の本文。\n"],
 ]);
 const read = (p: string) => repo.get(p) ?? null;
 
@@ -31,6 +34,19 @@ describe("隔離バンドル", () => {
       expect(all).not.toContain("作風憲章");
       expect(all).not.toContain("封印を読む");
       expect(all).not.toContain("三話");
+    }
+  });
+
+  it("参考作品の本文と一覧は、どの役割のバンドルにも入らない", () => {
+    for (const role of ROLES) {
+      const b = buildBundle({ work: "w", upto: 3, role, read });
+      const hasReferenceKey = [...b.keys()].some(
+        (k) => k.includes("references") || k.includes("n0000aa"),
+      );
+      expect(hasReferenceKey).toBe(false);
+      const all = [...b.values()].join("\n");
+      expect(all).not.toContain("参考作品の本文");
+      expect(all).not.toContain("参考作品の題");
     }
   });
 
