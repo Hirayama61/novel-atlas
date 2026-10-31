@@ -36,7 +36,7 @@ gh api --paginate 'repos/Hirayama61/novel-atlas/issues?state=all&labels=audit:<k
 
 ## 3. 判断する
 
-候補ごとに AGENTS.md の基準で `頻度 N × 影響 M = 積` を付ける。
+候補ごとに `.claude/skills/polaris-dev/reference/review-criteria.md` の基準で `頻度 N × 影響 M = 積` を付ける。
 
 - 積が 5 未満なら起票しない。
 - キーが既存の一覧にあれば起票しない。今回の候補同士で重なるものは 1 件にまとめる。

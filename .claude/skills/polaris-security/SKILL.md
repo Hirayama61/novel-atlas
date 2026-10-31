@@ -12,7 +12,7 @@ description: Polaris のセキュリティ監査係の 1 回分。Hirayama61/nov
 
 ## 手順
 
-1. `.claude/skills/polaris-dev/reference/gh-rest.md` と `AGENTS.md` を読む。
+1. `.claude/skills/polaris-dev/reference/gh-rest.md` と `.claude/skills/polaris-dev/reference/review-criteria.md` を読む。
 2. `.claude/skills/polaris-dev/reference/audit.md` の手順に、`<kind>` = `security` で従う。
 3. 監査役に渡す観点は `.claude/skills/polaris-security/reference/checklist.md`。主セッションはこのファイルを読まなくてよい。
 

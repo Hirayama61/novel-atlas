@@ -14,7 +14,7 @@ effort: medium
 ## 手順
 
 1. `.claude/skills/polaris-security/reference/checklist.md` を読む。項目 ID (例: `S02`) ごとに見る。
-2. `CLAUDE.md` の「守ること」と `AGENTS.md` の「必ず見るもの」を読む。チェックリストと食い違うときはリポジトリ側を優先する。
+2. `CLAUDE.md` の「守ること」と `.claude/skills/polaris-dev/reference/review-criteria.md` の「必ず見るもの」を読む。チェックリストと食い違うときはリポジトリ側を優先する。
 3. 依頼に「既存のキー」が渡されたら、そのキーに当たる候補は返さない。
 4. Grep / Glob で該当しそうな箇所を絞り、要る行だけ Read する。
    依存の既知脆弱性は、lockfile に合う監査コマンド (`bun audit`、`pnpm audit`、`cargo audit` のうち使えるもの) を 1 回だけ実行して見る。ネットワークに出られず失敗したら、その旨を返して先に進む。
