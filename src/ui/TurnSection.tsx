@@ -21,23 +21,27 @@ export function TurnSection(props: Props) {
 
   const hasItems = items.length > 0;
   if (!hasItems && !error) return null;
+  const isAnyOpening = opening !== null;
+  const rows = items.map((item) => {
+    const title = workTitles.get(item.work) ?? item.work;
+    const isOpening = opening === item.number;
+    return (
+      <TurnRow
+        key={item.number}
+        title={title}
+        ep={item.ep}
+        action={TURN_ACTION_LABELS[item.kind]}
+        isOpening={isOpening}
+        isDisabled={isAnyOpening}
+        onOpen={() => void open(item)}
+      />
+    );
+  });
   return (
     <section className="turn">
       <h2>あなたの番</h2>
       {error ? <p className="error">{error}</p> : null}
-      <ul className="pulls">
-        {items.map((item) => (
-          <TurnRow
-            key={item.number}
-            title={workTitles.get(item.work) ?? item.work}
-            ep={item.ep}
-            action={TURN_ACTION_LABELS[item.kind]}
-            isOpening={opening === item.number}
-            isDisabled={opening !== null}
-            onOpen={() => void open(item)}
-          />
-        ))}
-      </ul>
+      <ul className="pulls">{rows}</ul>
     </section>
   );
 }
