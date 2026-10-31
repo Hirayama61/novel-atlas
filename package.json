@@ -20,6 +20,7 @@
     "lint-text": "tsx scripts/lint-text.ts",
     "isolate": "tsx scripts/isolate.ts",
     "build-index": "tsx scripts/build-index.ts",
+    "collect-references": "tsx scripts/collect-references.ts",
     "schemas": "tsx scripts/export-schemas.ts",
     "design-gate": "tsx scripts/design-gate.ts"
   },
