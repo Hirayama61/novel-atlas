@@ -56,7 +56,8 @@ export function getTurnKind(labels: readonly string[]): TurnKind | undefined {
 /** ブランチ名から作品と話数を取る。話の PR でなければ undefined */
 export function getTurnTarget(ref: string): TurnTarget | undefined {
   const match = EPISODE_BRANCH.exec(ref);
-  if (!match) return undefined;
+  const isEpisodeBranch = match !== null;
+  if (!isEpisodeBranch) return undefined;
   return { work: match[1]!, ep: Number(match[2]) };
 }
 
@@ -77,7 +78,8 @@ function toTurnItem(pull: TurnPull): TurnItem | undefined {
   const labels = pull.labels.map((l) => l.name);
   const kind = getTurnKind(labels);
   const target = getTurnTarget(pull.head.ref);
-  if (!kind || !target) return undefined;
+  const isTurn = kind !== undefined && target !== undefined;
+  if (!isTurn) return undefined;
   return { number: pull.number, ref: pull.head.ref, ...target, kind, tab: getTurnTab(labels) };
 }
 
@@ -87,7 +89,8 @@ function isTurnItem(item: TurnItem | undefined): item is TurnItem {
 
 function compareTurnItems(a: TurnItem, b: TurnItem): number {
   const byKind = TURN_KINDS.indexOf(a.kind) - TURN_KINDS.indexOf(b.kind);
-  if (byKind !== 0) return byKind;
+  const hasDifferentPriority = byKind !== 0;
+  if (hasDifferentPriority) return byKind;
   return a.number - b.number;
 }
 

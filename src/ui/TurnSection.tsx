@@ -20,7 +20,9 @@ export function TurnSection(props: Props) {
   const { items, error, opening, open } = useTurnItems(goTo);
 
   const hasItems = items.length > 0;
-  if (!hasItems && !error) return null;
+  const hasError = error !== null;
+  const isHidden = !hasItems && !hasError;
+  if (isHidden) return null;
   const isAnyOpening = opening !== null;
   const rows = items.map((item) => {
     const title = workTitles.get(item.work) ?? item.work;
@@ -40,7 +42,7 @@ export function TurnSection(props: Props) {
   return (
     <section className="turn">
       <h2>あなたの番</h2>
-      {error ? <p className="error">{error}</p> : null}
+      {hasError ? <p className="error">{error}</p> : null}
       <ul className="pulls">{rows}</ul>
     </section>
   );
