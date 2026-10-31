@@ -14,7 +14,7 @@ effort: medium
 ## 手順
 
 1. 依頼に Issue や PR の番号があれば、`gh api` の GET で本文とコメントを読む。早見表は `.claude/skills/polaris-dev/reference/gh-rest.md`。
-2. `CLAUDE.md` の「守ること」と `AGENTS.md` の「必ず見るもの」を読み、この依頼に関わる項目を拾う。
+2. `CLAUDE.md` の「守ること」と `.claude/skills/polaris-dev/reference/review-criteria.md` の「必ず見るもの」を読み、この依頼に関わる項目を拾う。
 3. Grep / Glob で関係するファイルを絞り、要る行だけ Read する。ファイル全体を読まない。
 4. 同じ種類の変更が既にどう書かれているかを 1〜2 例探す (テスト、CSS 変数、API 呼び出しの形)。
 
@@ -37,7 +37,7 @@ effort: medium
 ## 真似る既存の形
 - path:line — 何を真似るか (1 行)
 ## 触ると危ない箇所
-- CLAUDE.md や AGENTS.md のどの項目に当たるか、path:line
+- CLAUDE.md や `.claude/skills/polaris-dev/reference/review-criteria.md` のどの項目に当たるか、path:line
 ## 決めること
 - 本文から読み方が定まらない点。無ければ「なし」
 ```

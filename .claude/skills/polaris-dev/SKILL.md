@@ -15,7 +15,7 @@ description: Polaris の開発係の 1 回分。Hirayama61/novel-atlas の `need
 ## 0. 準備
 
 1. `.claude/skills/polaris-dev/reference/gh-rest.md` を読む。GitHub の操作はここにあるものだけを使う。
-2. `AGENTS.md` を読む。頻度 × 影響の基準と「必ず見るもの」が判断の物差し。
+2. `.claude/skills/polaris-dev/reference/review-criteria.md` を読む。頻度 × 影響の基準と「必ず見るもの」が判断の物差し。
 3. `.claude/skills/polaris-dev/reference/repo.md` があれば読む。このリポジトリ固有の手順 (VRT の基準画像の更新など) が書いてある。
 4. `.claude/skills/polaris-refactor/reference/style.md` を読む。新しく書く部品・関数・テストはこの規約に合わせる。既存コードの違反は Issue の範囲外なら直さない。
 5. 検査は `pnpm check`、`pnpm build`。`checker` が `Script not found` を返したら、`repo.md` か CLAUDE.md に書かれた検査コマンドで代える。
@@ -25,7 +25,7 @@ description: Polaris の開発係の 1 回分。Hirayama61/novel-atlas の `need
 上から順に、最初に見つかった 1 件だけを扱う。
 
 1. 指摘の修正: open の PR のうち head が `claude/issue-` で始まり、ラベル `needs-fix` を持ち `hold` を持たないもの。番号の小さい順に 1 件。→ 手順 2
-2. 新しい Issue: `ready` が付いた open の Issue のうち、`git ls-remote --heads origin` に `claude/issue-<番号>` が無いもの。番号の小さい順に 1 件。→ 手順 3
+2. 新しい Issue: `ready` が付き、`hold` も `human` も無い open の Issue のうち、`git ls-remote --heads origin` に `claude/issue-<番号>` が無いもの。番号の小さい順に 1 件。→ 手順 3
    - その Issue を `Closes #N` で指す PR が既にマージされていたら (閉じた PR の `body` を見る)、実装しない。Issue に「PR #M で完了済み」とコメントし、`ready` を外して次の Issue を見る。
 3. どちらも無ければ「対象なし」と報告して終わる。
 
@@ -43,7 +43,7 @@ description: Polaris の開発係の 1 回分。Hirayama61/novel-atlas の `need
    - 固有の手順が無ければ、`pnpm exec playwright install chromium` を試す。
      続けて、`checker` にその job の script (`check:e2e` など) を回してもらい、再現を図る。
    - それでも再現しないか直せなければ、下の「直せないとき」に従う。
-6. 指摘ごとに直すか直さないかを決める。AGENTS.md の積が 5 以上なら直す。指摘の外を書き換えない。
+6. 指摘ごとに直すか直さないかを決める。`.claude/skills/polaris-dev/reference/review-criteria.md` の積が 5 以上なら直す。指摘の外を書き換えない。
    直す場所が brief で足りなければ、`explorer` に該当の指摘を渡して `file:line` を集めてもらう。
 7. `pnpm install --frozen-lockfile` を実行してから直す。直したら `checker` に `pnpm check`、`pnpm build` を回してもらう。失敗したら直して回し直す。
 8. commit は 1 つ (`fix: レビューの指摘を直す` のように常体)。`git push origin claude/issue-N`。
@@ -61,7 +61,7 @@ PR に理由と選択肢 (A/B/C) をコメントして `hold` を付け、元の
 4. `pnpm install --frozen-lockfile` を実行してから実装する。
    - 変更は Issue の範囲に限る。ついでの改善をしない。CLAUDE.md の「守ること」に従う。
    - 新しく書く部品・関数・テストは `style.md` の規約に合わせる。MUST の違反はレビュー係が差し戻す。
-   - 純粋関数に切り出せる部分にはテストを足す。AGENTS.md の「必ず見るもの」に触れる変更は、テストで契約を確かめる。
+   - 純粋関数に切り出せる部分にはテストを足す。`.claude/skills/polaris-dev/reference/review-criteria.md` の「必ず見るもの」に触れる変更は、テストで契約を確かめる。
    - ブラウザでの目視確認はできない前提。見た目は既存の CSS 変数とパターンに揃える。
    - 実装中に判断の要る点が出たら、手順 3-2 と同じく質問して終わる。
 5. `checker` に `pnpm check`、`pnpm build` を回してもらう。失敗したら直して回し直す。直せなければ何も push せず、Issue に何が落ちたかをコメントし、`needs-info` を付けて `ready` を外す。

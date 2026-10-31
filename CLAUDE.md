@@ -58,7 +58,7 @@ pnpm schemas
 - GitHub の操作は `gh api` (REST) で行う。`gh issue ...` / `gh pr ...` は GraphQL を使うためクラウドの環境では失敗する。
 - `pnpm check`、`pnpm build` が通らない変更は出さない。画面や同期に触ったら `pnpm build && pnpm e2e` も通す。
 
-レビューと修正の基準は AGENTS.md にある。
+レビューと修正の基準は `.claude/skills/polaris-dev/reference/review-criteria.md` にある。`AGENTS.md` は Codex の PR レビュー専用。
 
 ## ラベル
 
