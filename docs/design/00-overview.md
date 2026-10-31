@@ -55,7 +55,7 @@
 - GitHub 操作は `gh api`(REST)で行う。`gh issue` / `gh pr` は GraphQL を使うため使わない。
 - 定期処理を private リポジトリの Actions に載せない(無料枠を消費する)。Actions は PR ごとの短い検査だけにする。
 - ビューアは Fine-grained PAT で Contents API を読む。トークンをコードに埋めない。
-- `novel-atlas` 本体の開発は Issue 駆動(`ready` → `in-progress`、`area:*` ラベル、`/work-issue`)。
+- `novel-atlas` 本体の開発は Issue 駆動(`ready` のラベルと、開発係・レビュー係の PR。`CLAUDE.md` の「開発の流れ」が正)。
 
 ## 設計の原則
 
