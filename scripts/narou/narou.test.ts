@@ -4,7 +4,13 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { collectReferences, FETCH_STATE_PATH, getStopReason } from "./collect";
+import {
+  collectReferences,
+  FETCH_STATE_PATH,
+  getCurrentGone,
+  getEpisodesToFetch,
+  getStopReason,
+} from "./collect";
 import { extractEpisodeText, getEpisodePath, getEpisodeUrl } from "./episode-html";
 import { getNovelMetaUrl, parseNovelMeta } from "./novel-api";
 import {
@@ -187,7 +193,7 @@ describe("参考作品を集める", () => {
       general_all_no: 2,
     });
     const state = JSON.parse(readData(FETCH_STATE_PATH)) as { works: Record<string, unknown> };
-    expect(state.works[NCODE]).toEqual({ status: "完了", episodes: 2, fetched: 2 });
+    expect(state.works[NCODE]).toEqual({ status: "完了", episodes: 2, fetched: 2, gone: [] });
   });
 
   it("既に置いてある話は取り直さず、作品情報は取り直す", async () => {
@@ -268,7 +274,54 @@ describe("参考作品を集める", () => {
     const summary = await collectReferences(dataDir, LONG_BUDGET, client, clock);
     expect(hasData(getEpisodePath(NCODE, 2))).toBe(true);
     expect(readData(`references/${NCODE}/fetch-log.csv`)).toContain("404");
-    expect(summary.works[NCODE]).toMatchObject({ status: "途中", fetched: 1 });
+    expect(summary.works[NCODE]).toMatchObject({ status: "完了", fetched: 1, gone: [1] });
+  });
+
+  it("消えた話は次の回に取りに行かず、記録も足さない", async () => {
+    writeWorks([NCODE]);
+    const clock = fakeClock();
+    const routes = {
+      [META_URL]: ok(metaBody(2)),
+      [getEpisodeUrl(NCODE, 2, false)]: ok(EPISODE_2),
+    };
+    await collectReferences(
+      dataDir,
+      LONG_BUDGET,
+      createPoliteClient(routeFetch(routes, clock), clock),
+      clock,
+    );
+    const logAfterFirst = readData(`references/${NCODE}/fetch-log.csv`);
+    const secondRoutes = { [META_URL]: ok(metaBody(2)) };
+    const fetchFn = routeFetch(secondRoutes, clock);
+    const summary = await collectReferences(
+      dataDir,
+      LONG_BUDGET,
+      createPoliteClient(fetchFn, clock),
+      clock,
+    );
+    const urls = fetchFn.mock.calls.map(([url]) => url);
+    expect(urls).toEqual([META_URL]);
+    expect(readData(`references/${NCODE}/fetch-log.csv`)).toBe(logAfterFirst);
+    expect(summary.works[NCODE]).toMatchObject({ status: "完了", gone: [1] });
+  });
+
+  it("消えた話の欄が無い前回の進捗も読める", async () => {
+    writeWorks([NCODE]);
+    const previous = { works: { [NCODE]: { status: "途中", episodes: 1, fetched: 0 } } };
+    mkdirSync(join(dataDir, "references"), { recursive: true });
+    writeFileSync(join(dataDir, FETCH_STATE_PATH), JSON.stringify(previous));
+    const clock = fakeClock();
+    const routes = {
+      [META_URL]: ok(metaBody(1)),
+      [getEpisodeUrl(NCODE, 1, false)]: ok(EPISODE_1),
+    };
+    const summary = await collectReferences(
+      dataDir,
+      LONG_BUDGET,
+      createPoliteClient(routeFetch(routes, clock), clock),
+      clock,
+    );
+    expect(summary.works[NCODE]).toEqual({ status: "完了", episodes: 1, fetched: 1, gone: [] });
   });
 
   it("取得元が 503 を返したらこの回を止める", async () => {
@@ -291,5 +344,17 @@ describe("参考作品を集める", () => {
     const summary = await collectReferences(dataDir, LONG_BUDGET, client, clock);
     expect(fetchFn).not.toHaveBeenCalled();
     expect(Object.values(summary.works)).toEqual([expect.objectContaining({ status: "失敗" })]);
+  });
+});
+
+describe("getEpisodesToFetch", () => {
+  it("置いていない話から消えた話を除く", () => {
+    expect(getEpisodesToFetch([1, 3, 4], [3])).toEqual([1, 4]);
+  });
+});
+
+describe("getCurrentGone", () => {
+  it("話数が減って範囲の外になった話と、後から置いた話を落とす", () => {
+    expect(getCurrentGone([2, 5, 9], [2, 3])).toEqual([2]);
   });
 });
