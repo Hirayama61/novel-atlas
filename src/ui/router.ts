@@ -21,6 +21,16 @@ export type Route =
   | { page: "pulls" }
   | { page: "settings" };
 
+/** 読書画面で設計書タブを開くときの `tab` の値 */
+const DESIGN_TAB = "design";
+
+/** 読書画面の `tab` のクエリ。指定が無ければ何も足さない(本文を開く) */
+function toTabQuery(tab: "design" | undefined): Record<string, string> {
+  const hasTab = tab !== undefined;
+  if (!hasTab) return {};
+  return { tab };
+}
+
 const TABS = ["episodes", "characters", "timeline", "threads", "knowledge"] as const;
 
 export function parseHash(hash: string): Route {
@@ -32,16 +42,17 @@ export function parseHash(hash: string): Route {
     if (parts[2] === "e" && parts[3]) {
       const pr = q.get("pr");
       const line = q.get("line");
-      const isDesignTab = q.get("tab") === "design";
-      return {
+      const reader: Route = {
         page: "reader",
         work: parts[1],
         ep: Number(parts[3]),
         ref,
         pr: pr ? Number(pr) : null,
         ...(line ? { line: Number(line) } : {}),
-        ...(isDesignTab ? { tab: "design" as const } : {}),
       };
+      const isDesignTab = q.get("tab") === DESIGN_TAB;
+      if (!isDesignTab) return reader;
+      return { ...reader, tab: DESIGN_TAB };
     }
     const tab = (TABS as readonly string[]).includes(parts[2] ?? "")
       ? (parts[2] as (typeof TABS)[number])
@@ -67,7 +78,7 @@ export function href(r: Route): string {
       return `#/w/${encodeURIComponent(r.work)}/e/${r.ep}${q(r.ref, {
         ...(r.pr ? { pr: String(r.pr) } : {}),
         ...(r.line ? { line: String(r.line) } : {}),
-        ...(r.tab ? { tab: r.tab } : {}),
+        ...toTabQuery(r.tab),
       })}`;
     case "pulls":
       return "#/pulls";
