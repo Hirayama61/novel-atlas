@@ -81,7 +81,9 @@ export function IssueSheet(props: OwnProps) {
         <button onClick={submit} disabled={isSubmitDisabled}>
           {submitLabel}
         </button>
-        <button onClick={onClose}>閉じる</button>
+        <button onClick={onClose} disabled={isSending}>
+          閉じる
+        </button>
       </div>
       {send.kind === "sent" ? (
         <p className="muted">
