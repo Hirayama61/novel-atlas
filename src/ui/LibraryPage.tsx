@@ -1,10 +1,12 @@
+import { REFERENCES_CSV_PATH } from "../core/references";
 import { loadConfig } from "../sync/github";
+import { ReferencesSection } from "./references/ReferencesSection";
 import { href } from "./router";
 import { TurnSection } from "./TurnSection";
 import { useData } from "./useData";
 
 export function LibraryPage() {
-  const { data, loading, error, sync, progress } = useData("main");
+  const { data, files, loading, error, sync, progress } = useData("main");
   if (!loadConfig().token)
     return (
       <p>
@@ -14,6 +16,7 @@ export function LibraryPage() {
     );
   if (loading) return <p className="muted">読み込み中…</p>;
   const works = [...(data?.works.values() ?? [])].filter((w) => w.work);
+  const referencesCsv = files?.get(REFERENCES_CSV_PATH) ?? null;
   const workTitles = new Map(works.map((w) => [w.id, w.work!.title]));
   return (
     <div>
@@ -42,6 +45,7 @@ export function LibraryPage() {
         })}
       </ul>
       {!works.length ? <p className="muted">作品がありません。同期してください。</p> : null}
+      <ReferencesSection csvText={referencesCsv} onChanged={sync} />
     </div>
   );
 }

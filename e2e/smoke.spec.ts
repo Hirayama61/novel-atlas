@@ -80,7 +80,7 @@ test("設計の承認待ちは設計書を開き、番の PR が無ければ節�
 
   state.labels.splice(0, state.labels.length, "stage:drafting");
   await page.goto("./");
-  await expect(page.getByRole("heading", { name: "作品" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "作品", exact: true })).toBeVisible();
   await expect(page.getByRole("heading", { name: "あなたの番" })).toHaveCount(0);
 });
 
@@ -133,4 +133,39 @@ test("改善 Issue の送信中は入力と閉じるを無効にし、1 件だ�
   release();
   await expect(page.getByText("を作りました")).toBeVisible();
   expect(state.issues).toHaveLength(1);
+});
+
+test("ライブラリで参考作品を登録し、二度目と対応しない URL は理由を出し、一覧から外す", async ({
+  page,
+}) => {
+  const state = await mockGitHub(page);
+  state.contentPutStatuses.push(409);
+  await page.goto("./");
+  const input = page.getByLabel("作品 URL か ncode");
+
+  await input.fill("https://ncode.syosetu.com/n1234ab/3/");
+  await page.getByRole("button", { name: "登録" }).click();
+  await expect(page.getByText("n1234ab を登録しました")).toBeVisible();
+  await expect(page.getByRole("button", { name: "n1234ab を一覧から外す" })).toBeVisible();
+  expect(state.contentPuts).toHaveLength(2);
+  expect(state.contentPuts[1]).toMatchObject({
+    path: "references/works.csv",
+    text: "ncode,title,volumes,note\nn1234ab,,,\n",
+  });
+
+  await input.fill("N1234AB");
+  await page.getByRole("button", { name: "登録" }).click();
+  await expect(page.getByText("n1234ab は登録済みです")).toBeVisible();
+
+  await input.fill("https://kakuyomu.jp/works/1");
+  await page.getByRole("button", { name: "登録" }).click();
+  await expect(
+    page.getByText("小説家になろう(ncode.syosetu.com)の URL だけ登録できます"),
+  ).toBeVisible();
+  expect(state.contentPuts).toHaveLength(2);
+
+  await page.getByRole("button", { name: "n1234ab を一覧から外す" }).click();
+  await expect(page.getByText("n1234ab を一覧から外しました")).toBeVisible();
+  await expect(page.getByText("登録した作品はまだありません。")).toBeVisible();
+  expect(state.contentPuts[2]!.text).toBe("ncode,title,volumes,note\n");
 });

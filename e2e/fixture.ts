@@ -13,6 +13,10 @@ export interface MockState {
   issueStatus: number;
   /** あれば、Issue 作成の応答をこの Promise が解決するまで待たせる */
   holdIssue?: Promise<void>;
+  /** データリポジトリの main に Contents API で書いた PUT の中身 */
+  contentPuts: { path: string; message: string; sha?: string; text: string }[];
+  /** 次の Contents の PUT に返す状態。空なら 201 */
+  contentPutStatuses: number[];
 }
 
 const PR_BRANCH = "ep/lh/003";
@@ -31,6 +35,8 @@ export async function mockGitHub(page: Page): Promise<MockState> {
     labels: ["stage:reading"],
     issues: [],
     issueStatus: 200,
+    contentPuts: [],
+    contentPutStatuses: [],
   };
   const main = new Map(FILES);
   const branch = new Map([
@@ -62,6 +68,26 @@ export async function mockGitHub(page: Page): Promise<MockState> {
       return json(route, { sha: `tree_${t[1]}`, truncated: false, tree: tree(commits[t[1]!]!) });
     const b = /^\/git\/blobs\/(.+)$/.exec(path);
     if (b) return route.fulfill({ body: blobs.get(b[1]!) ?? "" });
+    const c = /^\/contents\/(.+)$/.exec(path);
+    if (c) {
+      const file = c[1]!;
+      if (method === "PUT") {
+        const put = route.request().postDataJSON() as {
+          message: string;
+          sha?: string;
+          content: string;
+        };
+        const text = Buffer.from(put.content, "base64").toString("utf8");
+        state.contentPuts.push({ path: file, message: put.message, sha: put.sha, text });
+        const status = state.contentPutStatuses.shift() ?? 201;
+        if (status !== 201) return json(route, { message: "conflict" }, status);
+        main.set(file, text);
+        return json(route, { content: { sha: sha(text) } }, 201);
+      }
+      const text = main.get(file);
+      if (text === undefined) return json(route, { message: "Not Found" }, 404);
+      return json(route, { sha: sha(text), content: Buffer.from(text).toString("base64") });
+    }
     const pr = {
       number: 3,
       title: "[lh] 第3話 灯を消す",

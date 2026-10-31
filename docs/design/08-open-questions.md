@@ -36,6 +36,7 @@ A が動かなかったときに B と C のどちらに倒すか。
 
 - **A(推奨)**: GitHub の画面で行う。PAT の権限が `Pull requests` で済む。
 - B: ビューアに「確定」ボタンを置く。PAT に `Contents: write` が要り、端末に置くトークンの権限が広がる。
+- 見直し(2026-10-31): 参考作品の登録(`references/works.csv` を書く)のために PAT に `Contents: Read and write` を足した。マージは引き続き GitHub の画面で行う(A のまま)。アプリが Contents で書くのは `references/works.csv` だけにする。
 
 ### Q5. ルーティンの間隔
 
