@@ -55,11 +55,11 @@ works/
       overall.json             通しスコア台帳
   <次の作品>/                   同じ構成
 
-references/                    他作品
-  works.csv                    シード(ncode・題名・既刊巻数・注記)。旧 novel-analytics/data/works.csv
+references/                    他作品(参考作品)
+  works.csv                    登録した作品の一覧(ncode・題名・既刊巻数・注記)。アプリの登録画面が書く。旧 novel-analytics/data/works.csv
   <ncode>/
     meta.json                  なろう API のメタ(毎回取り直す)
-    episodes/<n>.txt           本文キャッシュ(取得済みは再取得しない)
+    episodes/<NNN>.md          本文(取得済みは再取得しない)。ビューアが同期して読む
     fetch-log.csv              取得失敗の記録
     analysis/                  自作と同じスキーマ(characters/ timeline.yaml threads.yaml)+ stats.json
   fetch-state.json             収集ルーティンの進捗
@@ -94,9 +94,12 @@ ops/
   `index.json`・`claims.yaml`・`feedback/*.yaml`・`scores/*.json` はスクリプトかルーティンが書く。
   旧 `shogi-atlas-data` の `inbox-state.json` と同じ扱い。
 - **他作品の本文は `references/<ncode>/episodes/` に置き、ビルド成果物には出さない。**
-  ビューアは解析結果だけを同期対象にし、本文は同期しない(06)。
+  本文を置くのは private のこのリポジトリと、同期した端末の IndexedDB だけ。公開リポジトリ(`novel-atlas`)とビルド成果物には入れない。
+  ビューアは本文も同期し、自作と同じ読書画面で読む(06)。作者の端末で private リポジトリから読むだけで、再配布はしない。
   HTML の生データ(旧 `cache/<ncode>/<n>.raw.html`)は置かない。
   抽出器を直したときの再抽出用だったが、7 作で 143MB あり、本文テキストだけで解析には足りる。
+- **参考作品は `references/` に一本化し、Polaris の `library/novel/` は廃止した。**
+  小説は Polaris から切り離し、登録・収集・読書・AI の参照を novel-atlas で完結させる(07 の 3 段目)。
 
 ## work.yaml の例
 
