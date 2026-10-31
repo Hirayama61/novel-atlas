@@ -105,10 +105,13 @@ export async function getTree(
   return { sha: t.sha, entries: t.tree.filter((e) => e.type === "blob" && isSyncTarget(e.path)) };
 }
 
-/** 同期するファイル。他作品の本文キャッシュ(references/<ncode>/episodes/)は端末に持ってこない */
+/**
+ * 同期するファイル。参考作品は作品情報(meta.json)・本文(episodes/)・分析を持ってくる。
+ * 取得の記録(fetch-state.json など)は読書に要らないので持ってこない。
+ */
 export function isSyncTarget(path: string): boolean {
   if (path === "index.json" || path === "references/works.csv") return true;
-  if (/^references\/[^/]+\/analysis\//.test(path)) return true;
+  if (/^references\/[^/]+\/(meta\.json$|episodes\/|analysis\/)/.test(path)) return true;
   // 旧版(archive/)と移行前の散文(legacy/)は読者向けの対象外なので同期しない
   if (path.startsWith("works/"))
     return /\.(ya?ml|md)$/.test(path) && !path.includes("/legacy/") && !path.includes("/archive/");

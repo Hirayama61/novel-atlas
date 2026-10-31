@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import type { Page, Route } from "@playwright/test";
-import { DESIGN_3, FILES } from "../src/core/__tests__/fixtures";
+import { DESIGN_3, FILES, TEXT_1, TEXT_2 } from "../src/core/__tests__/fixtures";
 
 const sha = (s: string) => createHash("sha1").update(s).digest("hex");
 
@@ -28,6 +28,18 @@ const PR_TEXT = `# 第3話 灯を消す
 　ミオは灯を消した。
 `;
 
+/** 参考作品の ncode と、取得済みの 2 話。本文は架空の作品のフィクスチャを使い回す */
+export const REFERENCE_NCODE = "n9999zz";
+export const REFERENCE_EPISODES = [TEXT_1, TEXT_2];
+const REFERENCE_FILES: [string, string][] = [
+  [`references/${REFERENCE_NCODE}/meta.json`, JSON.stringify({ title: "潮見の道" })],
+  [`references/${REFERENCE_NCODE}/fetch-state.json`, "{}"],
+  ...REFERENCE_EPISODES.map((text, i): [string, string] => [
+    `references/${REFERENCE_NCODE}/episodes/${String(i + 1).padStart(3, "0")}.md`,
+    text,
+  ]),
+];
+
 /** データリポジトリ(架空の作品)と PR 1 本をモックする */
 export async function mockGitHub(page: Page): Promise<MockState> {
   const state: MockState = {
@@ -38,7 +50,7 @@ export async function mockGitHub(page: Page): Promise<MockState> {
     contentPuts: [],
     contentPutStatuses: [],
   };
-  const main = new Map(FILES);
+  const main = new Map([...FILES, ...REFERENCE_FILES]);
   const branch = new Map([
     ...FILES,
     ["works/lh/episodes/003/design.yaml", DESIGN_3],
