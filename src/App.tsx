@@ -31,6 +31,7 @@ export default function App() {
             branch={route.ref}
             pr={route.pr}
             line={route.line}
+            initialTab={route.tab}
           />
         ) : null}
         {route.page === "pulls" ? <PullsPage /> : null}

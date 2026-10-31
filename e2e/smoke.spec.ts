@@ -60,3 +60,26 @@ test("設計書タブを読み、設計を承認する", async ({ page }) => {
   await expect(page.getByText("design-approved を付けました")).toBeVisible();
   expect(state.labels).toContain("design-approved");
 });
+
+test("ライブラリの先頭の「あなたの番」から、読む番の話を開く", async ({ page }) => {
+  await mockGitHub(page);
+  await page.goto("./");
+  await expect(page.getByRole("heading", { name: "あなたの番" })).toBeVisible();
+  await expect(page.getByText("読む", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "灯台守の娘 第3話" }).click();
+  await expect(page.getByText("父は灯を点けなかった。")).toBeVisible();
+});
+
+test("設計の承認待ちは設計書を開き、番の PR が無ければ節を出さない", async ({ page }) => {
+  const state = await mockGitHub(page);
+  state.labels.splice(0, state.labels.length, "stage:design");
+  await page.goto("./");
+  await expect(page.getByText("設計を承認する")).toBeVisible();
+  await page.getByRole("button", { name: "灯台守の娘 第3話" }).click();
+  await expect(page.getByText("消えた灯と娘の影")).toBeVisible();
+
+  state.labels.splice(0, state.labels.length, "stage:drafting");
+  await page.goto("./");
+  await expect(page.getByRole("heading", { name: "作品" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "あなたの番" })).toHaveCount(0);
+});

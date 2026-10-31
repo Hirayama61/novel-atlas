@@ -1,5 +1,6 @@
 import { loadConfig } from "../sync/github";
 import { href } from "./router";
+import { TurnSection } from "./TurnSection";
 import { useData } from "./useData";
 
 export function LibraryPage() {
@@ -13,8 +14,10 @@ export function LibraryPage() {
     );
   if (loading) return <p className="muted">読み込み中…</p>;
   const works = [...(data?.works.values() ?? [])].filter((w) => w.work);
+  const workTitles = new Map(works.map((w) => [w.id, w.work!.title]));
   return (
     <div>
+      <TurnSection workTitles={workTitles} />
       <div className="toolbar">
         <h2>作品</h2>
         <button onClick={() => void sync()} disabled={!!progress}>

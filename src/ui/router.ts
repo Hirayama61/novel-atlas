@@ -8,7 +8,16 @@ export type Route =
       tab: "episodes" | "characters" | "timeline" | "threads" | "knowledge";
       ref: string;
     }
-  | { page: "reader"; work: string; ep: number; ref: string; pr: number | null; line?: number }
+  | {
+      page: "reader";
+      work: string;
+      ep: number;
+      ref: string;
+      pr: number | null;
+      line?: number;
+      /** 最初に開くタブ。無ければ本文 */
+      tab?: "design";
+    }
   | { page: "pulls" }
   | { page: "settings" };
 
@@ -23,6 +32,7 @@ export function parseHash(hash: string): Route {
     if (parts[2] === "e" && parts[3]) {
       const pr = q.get("pr");
       const line = q.get("line");
+      const isDesignTab = q.get("tab") === "design";
       return {
         page: "reader",
         work: parts[1],
@@ -30,6 +40,7 @@ export function parseHash(hash: string): Route {
         ref,
         pr: pr ? Number(pr) : null,
         ...(line ? { line: Number(line) } : {}),
+        ...(isDesignTab ? { tab: "design" as const } : {}),
       };
     }
     const tab = (TABS as readonly string[]).includes(parts[2] ?? "")
@@ -56,6 +67,7 @@ export function href(r: Route): string {
       return `#/w/${encodeURIComponent(r.work)}/e/${r.ep}${q(r.ref, {
         ...(r.pr ? { pr: String(r.pr) } : {}),
         ...(r.line ? { line: String(r.line) } : {}),
+        ...(r.tab ? { tab: r.tab } : {}),
       })}`;
     case "pulls":
       return "#/pulls";
