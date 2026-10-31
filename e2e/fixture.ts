@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import type { Page, Route } from "@playwright/test";
-import { DESIGN_3, FILES } from "../src/core/__tests__/fixtures";
+import { DESIGN_3, FILES, TEXT_1, TEXT_2 } from "../src/core/__tests__/fixtures";
 
 const sha = (s: string) => createHash("sha1").update(s).digest("hex");
 
@@ -28,12 +28,9 @@ const PR_TEXT = `# 第3話 灯を消す
 　ミオは灯を消した。
 `;
 
-/** 参考作品(架空)の ncode と、取得済みの 2 話。ルビはなろう記法 */
+/** 参考作品の ncode と、取得済みの 2 話。本文は架空の作品のフィクスチャを使い回す */
 export const REFERENCE_NCODE = "n9999zz";
-export const REFERENCE_EPISODES = [
-  "　潮が引くと、｜岬《みさき》の下に石の道が出た。\n　少年はその道を数えた。\n",
-  "　二度目の干潮で、道の先に小屋が見えた。\n",
-];
+export const REFERENCE_EPISODES = [TEXT_1, TEXT_2];
 const REFERENCE_FILES: [string, string][] = [
   [`references/${REFERENCE_NCODE}/meta.json`, JSON.stringify({ title: "潮見の道" })],
   [`references/${REFERENCE_NCODE}/fetch-state.json`, "{}"],

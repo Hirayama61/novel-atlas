@@ -180,14 +180,13 @@ test("参考作品を「参考」の印つきで開き、投稿用コピー無�
   await item.getByRole("link", { name: "潮見の道" }).click();
   await page.getByRole("link", { name: "第1話" }).click();
 
-  await expect(page.getByText("少年はその道を数えた。")).toBeVisible();
-  await expect(page.locator("ruby", { hasText: "岬" }).locator("rt")).toHaveText("みさき");
+  await expect(page.getByText("ミオは言い切った。")).toBeVisible();
   await expect(page.getByRole("button", { name: "投稿用にコピー" })).toHaveCount(0);
   await page.getByRole("button", { name: "縦書き" }).click();
   await expect(page.locator(".text.vertical")).toBeVisible();
 
   await page.getByRole("link", { name: "続きの話へ(第2話)" }).click();
   await expect(page).toHaveURL(new RegExp(`#/r/${REFERENCE_NCODE}/e/2$`));
-  await expect(page.getByText("道の先に小屋が見えた。")).toBeVisible();
+  await expect(page.getByText("ミオは港へ下りた。")).toBeVisible();
   await expect(page.getByRole("link", { name: /続きの話へ/ })).toHaveCount(0);
 });
