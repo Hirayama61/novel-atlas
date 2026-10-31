@@ -7,6 +7,12 @@ const sha = (s: string) => createHash("sha1").update(s).digest("hex");
 export interface MockState {
   reviews: unknown[];
   labels: string[];
+  /** 本体リポジトリに作った Issue の POST の中身 */
+  issues: unknown[];
+  /** 次の Issue 作成に返す状態。200 以外なら失敗させる */
+  issueStatus: number;
+  /** あれば、Issue 作成の応答をこの Promise が解決するまで待たせる */
+  holdIssue?: Promise<void>;
 }
 
 const PR_BRANCH = "ep/lh/003";
@@ -20,7 +26,12 @@ const PR_TEXT = `# 第3話 灯を消す
 
 /** データリポジトリ(架空の作品)と PR 1 本をモックする */
 export async function mockGitHub(page: Page): Promise<MockState> {
-  const state: MockState = { reviews: [], labels: ["stage:reading"] };
+  const state: MockState = {
+    reviews: [],
+    labels: ["stage:reading"],
+    issues: [],
+    issueStatus: 200,
+  };
   const main = new Map(FILES);
   const branch = new Map([
     ...FILES,
@@ -77,6 +88,14 @@ export async function mockGitHub(page: Page): Promise<MockState> {
       return json(route, []);
     }
     return json(route, { message: `not mocked: ${method} ${path}` }, 404);
+  });
+
+  await page.route("https://api.github.com/repos/Hirayama61/novel-atlas/issues", async (route) => {
+    if (state.issueStatus !== 200)
+      return json(route, { message: "Resource not accessible" }, state.issueStatus);
+    state.issues.push(route.request().postDataJSON());
+    await state.holdIssue;
+    return json(route, { number: 42, html_url: "https://github.com/x/y/issues/42" }, 201);
   });
 
   await page.addInitScript(() => {

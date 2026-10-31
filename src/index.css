@@ -350,6 +350,7 @@ details > summary {
   align-items: center;
 }
 
+.settings textarea,
 .settings input:not([type="checkbox"]) {
   display: block;
   width: 100%;
@@ -359,6 +360,17 @@ details > summary {
   color: var(--fg);
   border: 1px solid var(--line);
   border-radius: 6px;
+}
+
+.issue-sheet {
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 0 0.8rem 0.8rem;
+}
+
+.issue-sheet .row {
+  display: flex;
+  gap: 0.4rem;
 }
 
 ul.pulls,
