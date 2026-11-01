@@ -1,5 +1,15 @@
 import { describe, expect, it } from "vitest";
-import { getSyncFailedMessage } from "./referencesPermission";
+import { GitHubError } from "../../sync/github";
+import { getSyncFailedMessage, isWritePermissionError } from "./referencesPermission";
+
+describe("isWritePermissionError", () => {
+  it("権限不足の 403 は書き込み権限の不足として扱う", () => {
+    expect(isWritePermissionError(new GitHubError("x", 403))).toBe(true);
+  });
+  it("レート制限の 403 は書き込み権限の不足として扱わない", () => {
+    expect(isWritePermissionError(new GitHubError("x", 403, { resetAt: undefined }))).toBe(false);
+  });
+});
 
 describe("getSyncFailedMessage", () => {
   it("書き込みは済んだことと、同期し直すことと、理由を出す", () => {
