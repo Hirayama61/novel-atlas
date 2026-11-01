@@ -383,7 +383,8 @@ details > summary {
   cursor: pointer;
 }
 
-.settings label {
+.settings label,
+.issue-sheet label {
   display: block;
   margin: 0.8rem 0;
 }
@@ -395,7 +396,9 @@ details > summary {
 }
 
 .settings textarea,
-.settings input:not([type="checkbox"]) {
+.settings input:not([type="checkbox"]),
+.issue-sheet textarea,
+.issue-sheet input {
   display: block;
   width: 100%;
   font: inherit;
