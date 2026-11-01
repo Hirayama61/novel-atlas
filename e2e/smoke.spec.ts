@@ -7,6 +7,7 @@ test("同期して作品を開き、本文を縦書きで読む", async ({ page 
   await page.getByRole("link", { name: "灯台守の娘" }).click();
   await page.getByRole("link", { name: "灯台の夜" }).click();
   await expect(page.getByText("父の目はもう灯を追えない。")).toBeVisible();
+  await expect(page.getByText("この画面ではコメントできません。", { exact: false })).toBeVisible();
   await page.getByRole("button", { name: "縦書き" }).click();
   await expect(page.locator(".text.vertical")).toBeVisible();
   await page.getByRole("link", { name: "← 一覧" }).click();
@@ -68,6 +69,32 @@ test("ライブラリの先頭の「あなたの番」から、読む番の話�
   await expect(page.getByText("読む", { exact: true })).toBeVisible();
   await page.getByRole("button", { name: "灯台守の娘 第3話" }).click();
   await expect(page.getByText("父は灯を点けなかった。")).toBeVisible();
+});
+
+test("「あなたの番」から開いた話で、文を選んでコメントを送る", async ({ page }) => {
+  const state = await mockGitHub(page);
+  await page.goto("./");
+  await page.getByRole("button", { name: "灯台守の娘 第3話" }).click();
+  await expect(page.getByText("文をタップすると、その文にコメントを書けます。")).toBeVisible();
+
+  await page.getByText("嵐が来た。").click();
+  await page.getByPlaceholder("コメント").fill("嵐の音をもう少し");
+  await page.getByRole("button", { name: "下書きに足す" }).click();
+  await expect(page.getByText("下書き 1 件")).toBeVisible();
+
+  await page.getByRole("button", { name: "まとめて送る(1)" }).click();
+  await expect(page.getByText("1 件を送りました")).toBeVisible();
+  expect(state.reviews).toHaveLength(1);
+});
+
+test("作品の話の一覧から、進行中の話をコメントできる状態で開く", async ({ page }) => {
+  await mockGitHub(page);
+  await page.goto("./");
+  await page.getByRole("link", { name: "灯台守の娘" }).click();
+  await expect(page.getByText("PR #3 stage:reading")).toBeVisible();
+  await page.getByRole("button", { name: /第3話 灯を消す/ }).click();
+  await expect(page.getByText("父は灯を点けなかった。")).toBeVisible();
+  await expect(page.getByText("文をタップすると、その文にコメントを書けます。")).toBeVisible();
 });
 
 test("設計の承認待ちは設計書を開き、番の PR が無ければ節を出さない", async ({ page }) => {
