@@ -1,13 +1,11 @@
 import { useState } from "react";
 import { db } from "../db/db";
 import { loadConfig, saveConfig } from "../sync/github";
-import { IssueSheet } from "./issue/IssueSheet";
 
 export function SettingsPage() {
   const [config, setConfig] = useState(loadConfig);
   const [saved, setSaved] = useState(false);
   const [cleared, setCleared] = useState(false);
-  const [isIssueOpen, setIsIssueOpen] = useState(false);
   return (
     <div className="settings">
       <h2>設定</h2>
@@ -54,11 +52,7 @@ export function SettingsPage() {
       </button>
       {saved ? <span className="muted"> 保存しました</span> : null}
       <h3>アプリの改善</h3>
-      {isIssueOpen ? (
-        <IssueSheet onClose={() => setIsIssueOpen(false)} />
-      ) : (
-        <button onClick={() => setIsIssueOpen(true)}>改善 Issue を書く</button>
-      )}
+      <p className="muted">改善 Issue は、どの画面でもヘッダーの「改善」から書ける。</p>
       <h3>端末のデータ</h3>
       <button
         onClick={async () => {

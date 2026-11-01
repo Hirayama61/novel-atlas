@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 import { mockGitHub, REFERENCE_NCODE } from "./fixture";
 
 test("同期して作品を開き、本文を縦書きで読む", async ({ page }) => {
@@ -115,7 +115,7 @@ test("「あなたの番」に human の Issue を未チェックの数と並べ
   await expect(page.getByRole("link", { name: "PR は出さない" })).toHaveCount(0);
 });
 
-test("設定画面のシートから ready 付きの改善 Issue を作り、失敗では下書きを残す", async ({
+test("ヘッダーのシートから ready 付きの改善 Issue を作り、失敗では下書きを残す", async ({
   page,
 }) => {
   const state = await mockGitHub(page);
@@ -143,6 +143,41 @@ test("設定画面のシートから ready 付きの改善 Issue を作り、失
   });
   await expect(page.getByLabel("題")).toHaveValue("");
 });
+
+for (const { place, open } of [
+  {
+    place: "ライブラリ",
+    open: async (page: Page) => {
+      await page.goto("./");
+      await expect(page.getByRole("link", { name: "灯台守の娘" })).toBeVisible();
+    },
+  },
+  {
+    place: "読書画面",
+    open: async (page: Page) => {
+      await page.goto("./");
+      await page.getByRole("link", { name: "灯台守の娘" }).click();
+      await page.getByRole("link", { name: "灯台の夜" }).click();
+      await expect(page.getByText("父の目はもう灯を追えない。")).toBeVisible();
+    },
+  },
+]) {
+  test(`${place}からヘッダーの「改善」でシートを開き、改善 Issue を送って作った Issue へのリンクを出す`, async ({
+    page,
+  }) => {
+    const state = await mockGitHub(page);
+    await open(page);
+    await page.getByRole("button", { name: "改善 Issue を書く" }).click();
+    await page.getByLabel("題").fill("縦書きの字詰めを細かく選びたい");
+    await page.getByLabel("本文").fill("1 字ずつ選べると読みやすい");
+    await page.getByRole("button", { name: "Issue を作る" }).click();
+
+    await expect(page.getByRole("link", { name: "#42" })).toHaveAttribute("href", /\/issues\/42$/);
+    expect(state.issues).toHaveLength(1);
+    await page.getByRole("button", { name: "閉じる" }).click();
+    await expect(page.getByLabel("題")).toHaveCount(0);
+  });
+}
 
 test("改善 Issue の送信中は入力と閉じるを無効にし、1 件だけ作る", async ({ page }) => {
   const state = await mockGitHub(page);

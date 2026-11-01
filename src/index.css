@@ -90,7 +90,8 @@ header {
   font-family: system-ui, sans-serif;
 }
 
-header nav a {
+header nav a,
+header nav button {
   margin-left: 1rem;
 }
 
@@ -387,6 +388,21 @@ details > summary {
   border: 1px solid var(--line);
   border-radius: 6px;
   padding: 0 0.8rem 0.8rem;
+}
+
+/* 改善 Issue のシートを画面の下に重ねる。読書中も本文の位置を動かさない。読書画面の .composer より上に置く */
+.issue-overlay {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  max-height: 80vh;
+  overflow-y: auto;
+  background: var(--bg);
+  border-top: 1px solid var(--line);
+  padding: 0.5rem var(--gutter-right) calc(0.5rem + var(--safe-bottom)) var(--gutter-left);
+  font-family: system-ui, sans-serif;
+  z-index: 4;
 }
 
 .issue-sheet .row {
