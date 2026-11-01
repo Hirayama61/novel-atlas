@@ -98,3 +98,39 @@ function compareTurnItems(a: TurnItem, b: TurnItem): number {
 export function getTurnItems(pulls: readonly TurnPull[]): TurnItem[] {
   return pulls.map(toTurnItem).filter(isTurnItem).sort(compareTurnItems);
 }
+
+/** 話の一覧で、進行中の話を開くための PR */
+export interface EpisodePull {
+  number: number;
+  ref: string;
+  title: string;
+  labels: string[];
+}
+
+interface EpisodePullSource extends TurnPull {
+  title: string;
+}
+
+function isPullOfWork(work: string, pull: EpisodePullSource): boolean {
+  const target = getTurnTarget(pull.head.ref);
+  return target?.work === work;
+}
+
+function toEpisodePullEntry(pull: EpisodePullSource): [number, EpisodePull] {
+  const target = getTurnTarget(pull.head.ref)!;
+  const labels = pull.labels.map((l) => l.name);
+  return [target.ep, { number: pull.number, ref: pull.head.ref, title: pull.title, labels }];
+}
+
+/**
+ * open の PR から、その作品の話ごとの PR を引く。話の PR でないブランチは除く。
+ *
+ * @remarks
+ * PR の取得と画面遷移は持たない(`useEpisodePulls`)。ブランチ名が話を決めるので、1 話に open の PR は 1 本。
+ */
+export function getEpisodePulls(
+  pulls: readonly EpisodePullSource[],
+  work: string,
+): Map<number, EpisodePull> {
+  return new Map(pulls.filter((p) => isPullOfWork(work, p)).map(toEpisodePullEntry));
+}

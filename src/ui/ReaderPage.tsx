@@ -219,6 +219,12 @@ export function ReaderPage({ work, ep, branch: ref, pr, line, initialTab }: Prop
 
   if (loading) return <p className="muted">読み込み中…</p>;
   const labels = pull?.labels.map((l) => l.name) ?? [];
+  const isTextShown = text !== null && !(tab === "design" && episode?.design);
+  const canComment = !!pr && isTextShown;
+  const isCommentUnavailable = !pr && isTextShown;
+  const hasDrafts = drafts.length > 0;
+  const isDraftBarShown = !!pr && hasDrafts && !sel;
+  const sendLabel = busy ?? `まとめて送る(${drafts.length})`;
 
   return (
     <div className="reader">
@@ -252,15 +258,22 @@ export function ReaderPage({ work, ep, branch: ref, pr, line, initialTab }: Prop
               設計を承認
             </button>
           ) : null}
-          <button onClick={sendAll} disabled={!drafts.length || !!busy}>
-            {busy ?? `まとめて送る(${drafts.length})`}
-          </button>
           {pull ? (
             <a href={pull.html_url} target="_blank" rel="noreferrer">
               GitHub で開く
             </a>
           ) : null}
         </div>
+      ) : null}
+
+      {canComment ? (
+        <p className="muted comment-hint">文をタップすると、その文にコメントを書けます。</p>
+      ) : null}
+      {isCommentUnavailable ? (
+        <p className="muted comment-hint">
+          この画面ではコメントできません。コメントは進行中の話(PR)で書けます。「あなたの番」・PR
+          タブ・話の一覧の進行中の話から開いてください。
+        </p>
       ) : null}
 
       {error ? <p className="error">{error}</p> : null}
@@ -287,6 +300,15 @@ export function ReaderPage({ work, ep, branch: ref, pr, line, initialTab }: Prop
       ) : (
         <p className="muted">この話の本文はまだありません。</p>
       )}
+
+      {isDraftBarShown ? (
+        <div className="draft-bar">
+          <span>下書き {drafts.length} 件</span>
+          <button onClick={sendAll} disabled={!!busy}>
+            {sendLabel}
+          </button>
+        </div>
+      ) : null}
 
       {pr && sel ? (
         <div className="composer">

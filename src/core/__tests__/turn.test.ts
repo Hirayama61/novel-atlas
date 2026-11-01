@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getTurnItems, getTurnKind, getTurnTab, getTurnTarget } from "../turn";
+import { getEpisodePulls, getTurnItems, getTurnKind, getTurnTab, getTurnTarget } from "../turn";
 
 const pull = (number: number, ref: string, labels: string[]) => ({
   number,
@@ -62,5 +62,30 @@ describe("あなたの番", () => {
 
   it("該当が無ければ空", () => {
     expect(getTurnItems([pull(6, "ep/lh/006", ["stage:drafting"])])).toEqual([]);
+  });
+});
+
+describe("話の一覧の進行中の PR", () => {
+  const titled = (number: number, ref: string) => ({
+    ...pull(number, ref, ["stage:reading"]),
+    title: `#${number}`,
+  });
+
+  it("その作品の話の PR だけを話数で引く", () => {
+    const m = getEpisodePulls(
+      [titled(3, "ep/lh/003"), titled(4, "ep/other/001"), titled(5, "claude/issue-2")],
+      "lh",
+    );
+    expect([...m.keys()]).toEqual([3]);
+    expect(m.get(3)).toEqual({
+      number: 3,
+      ref: "ep/lh/003",
+      title: "#3",
+      labels: ["stage:reading"],
+    });
+  });
+
+  it("PR が無ければ空", () => {
+    expect(getEpisodePulls([], "lh").size).toBe(0);
   });
 });

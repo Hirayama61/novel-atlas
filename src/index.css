@@ -337,6 +337,28 @@ td.cell {
   font-family: system-ui, sans-serif;
 }
 
+/* 下書きの件数と送信。読み進めた先でも押せるよう画面の下に固定する。文を選んでいる間は .composer に場所を譲る */
+.draft-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--bg);
+  border-top: 1px solid var(--line);
+  padding: 0.5rem var(--gutter-right) calc(0.5rem + var(--safe-bottom)) var(--gutter-left);
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  justify-content: space-between;
+  font-family: system-ui, sans-serif;
+  font-size: 0.9rem;
+}
+
+.comment-hint {
+  font-family: system-ui, sans-serif;
+  margin: 0.3rem 0;
+}
+
 .composer textarea {
   font: inherit;
   width: 100%;
