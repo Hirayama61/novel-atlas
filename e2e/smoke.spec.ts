@@ -84,6 +84,37 @@ test("設計の承認待ちは設計書を開き、番の PR が無ければ節�
   await expect(page.getByRole("heading", { name: "あなたの番" })).toHaveCount(0);
 });
 
+test("「あなたの番」に human の Issue を未チェックの数と並べ、GitHub の Issue へのリンクにする", async ({
+  page,
+}) => {
+  const state = await mockGitHub(page);
+  state.labels.splice(0, state.labels.length, "stage:drafting");
+  state.humanIssues = [
+    {
+      number: 21,
+      title: "灯台の写真を撮りに行く",
+      html_url: "https://github.com/Hirayama61/novel-atlas/issues/21",
+      body: "- [ ] 港\n- [x] 岬\n- [ ] 灯室",
+      labels: [{ name: "human" }],
+    },
+    {
+      number: 22,
+      title: "PR は出さない",
+      html_url: "https://github.com/Hirayama61/novel-atlas/pull/22",
+      body: "",
+      labels: [{ name: "human" }],
+      pull_request: {},
+    },
+  ];
+  await page.goto("./");
+  await expect(page.getByRole("heading", { name: "あなたの番" })).toBeVisible();
+  const link = page.getByRole("link", { name: "灯台の写真を撮りに行く" });
+  await expect(link).toHaveAttribute("href", "https://github.com/Hirayama61/novel-atlas/issues/21");
+  await expect(link).toHaveAttribute("target", "_blank");
+  await expect(page.getByText("残り 2/3")).toBeVisible();
+  await expect(page.getByRole("link", { name: "PR は出さない" })).toHaveCount(0);
+});
+
 test("設定画面のシートから ready 付きの改善 Issue を作り、失敗では下書きを残す", async ({
   page,
 }) => {
