@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
-import { renderHook, waitFor } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { act, cleanup, renderHook, waitFor } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { listHumanIssues } from "../../sync/github";
 import { useHumanIssues } from "./useHumanIssues";
 
@@ -19,6 +19,10 @@ const issue = (number: number, labels: string[], isPull = false) => ({
 });
 
 describe("useHumanIssues", () => {
+  afterEach(() => {
+    cleanup();
+  });
+
   beforeEach(() => {
     vi.mocked(listHumanIssues).mockReset();
   });
@@ -39,5 +43,18 @@ describe("useHumanIssues", () => {
     const { result } = renderHook(() => useHumanIssues());
     await waitFor(() => expect(result.current.error).toBe("403"));
     expect(result.current.issues).toEqual([]);
+  });
+
+  it("表示に戻ったら取り直し、片付いた Issue を消す", async () => {
+    vi.mocked(listHumanIssues)
+      .mockResolvedValueOnce([issue(7, ["human"]), issue(9, ["human"])])
+      .mockResolvedValueOnce([issue(9, ["human"])]);
+    const { result } = renderHook(() => useHumanIssues());
+    await waitFor(() => expect(result.current.issues).toHaveLength(2));
+    act(() => {
+      document.dispatchEvent(new Event("visibilitychange"));
+    });
+    await waitFor(() => expect(result.current.issues).toHaveLength(1));
+    expect(result.current.issues[0]).toMatchObject({ number: 9 });
   });
 });
