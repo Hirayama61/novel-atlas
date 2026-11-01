@@ -295,3 +295,16 @@ export const createAppIssue = (c: DataRepoConfig, title: string, body: string) =
     method: "POST",
     body: { title, body, labels: ["ready"] },
   });
+
+export interface AppIssue {
+  number: number;
+  title: string;
+  html_url: string;
+  body?: string | null;
+  labels: { name: string }[];
+  pull_request?: unknown;
+}
+
+/** 本体リポジトリの open で `human` の Issue。Issues API は PR も返すので呼び出し側で除く */
+export const listHumanIssues = (c: DataRepoConfig) =>
+  request<AppIssue[]>({ ...c, ...APP_REPO }, "/issues?state=open&labels=human&per_page=100");

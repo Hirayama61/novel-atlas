@@ -9,6 +9,8 @@ export interface MockState {
   labels: string[];
   /** 本体リポジトリに作った Issue の POST の中身 */
   issues: unknown[];
+  /** 本体リポジトリの open で `human` の Issue(GET の応答) */
+  humanIssues: unknown[];
   /** 次の Issue 作成に返す状態。200 以外なら失敗させる */
   issueStatus: number;
   /** あれば、Issue 作成の応答をこの Promise が解決するまで待たせる */
@@ -46,6 +48,7 @@ export async function mockGitHub(page: Page): Promise<MockState> {
     reviews: [],
     labels: ["stage:reading"],
     issues: [],
+    humanIssues: [],
     issueStatus: 200,
     contentPuts: [],
     contentPutStatuses: [],
@@ -128,7 +131,12 @@ export async function mockGitHub(page: Page): Promise<MockState> {
     return json(route, { message: `not mocked: ${method} ${path}` }, 404);
   });
 
-  await page.route("https://api.github.com/repos/Hirayama61/novel-atlas/issues", async (route) => {
+  const appIssues = (url: URL) =>
+    url.origin === "https://api.github.com" &&
+    url.pathname === "/repos/Hirayama61/novel-atlas/issues";
+  await page.route(appIssues, async (route) => {
+    const isList = route.request().method() === "GET";
+    if (isList) return json(route, state.humanIssues);
     if (state.issueStatus !== 200)
       return json(route, { message: "Resource not accessible" }, state.issueStatus);
     state.issues.push(route.request().postDataJSON());

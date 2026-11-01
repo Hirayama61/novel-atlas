@@ -1,4 +1,6 @@
+import { getHumanIssueAction } from "../core/human-issues";
 import { TURN_ACTION_LABELS } from "../core/turn";
+import { useHumanIssues } from "./hooks/useHumanIssues";
 import { useTurnItems } from "./hooks/useTurnItems";
 
 interface Props {
@@ -9,18 +11,20 @@ interface Props {
 const goTo = (to: string) => window.location.assign(to);
 
 /**
- * ライブラリの先頭の「あなたの番」。依頼者がやる番の話を並べる。
+ * ライブラリの先頭の「あなたの番」。依頼者がやる番の話と、人がやる Issue を並べる。
  *
  * @remarks
- * どの PR が番かの判定は持たない(`src/core/turn.ts`)。取得と開く処理は `useTurnItems` が持つ。
- * 該当が無ければ何も描かない。
+ * どの PR が番か、どの Issue を出すかの判定は持たない(`src/core/turn.ts`、`src/core/human-issues.ts`)。
+ * 取得と開く処理は `useTurnItems`・`useHumanIssues` が持つ。該当もエラーも無ければ何も描かない。
  */
 export function TurnSection(props: Props) {
   const { workTitles } = props;
   const { items, error, opening, open } = useTurnItems(goTo);
+  const { issues, error: issueError } = useHumanIssues();
 
-  const hasItems = items.length > 0;
-  const hasError = error !== null;
+  const hasItems = items.length > 0 || issues.length > 0;
+  const errors = [error, issueError].filter((e) => e !== null);
+  const hasError = errors.length > 0;
   const isHidden = !hasItems && !hasError;
   if (isHidden) return null;
   const isAnyOpening = opening !== null;
@@ -29,7 +33,7 @@ export function TurnSection(props: Props) {
     const isOpening = opening === item.number;
     return (
       <TurnRow
-        key={item.number}
+        key={`pr-${item.number}`}
         title={title}
         ep={item.ep}
         action={TURN_ACTION_LABELS[item.kind]}
@@ -39,11 +43,27 @@ export function TurnSection(props: Props) {
       />
     );
   });
+  const issueRows = issues.map((issue) => (
+    <HumanIssueRow
+      key={`issue-${issue.number}`}
+      title={issue.title}
+      url={issue.url}
+      action={getHumanIssueAction(issue.tasks)}
+    />
+  ));
+  const errorLines = errors.map((message) => (
+    <p key={message} className="error">
+      {message}
+    </p>
+  ));
   return (
     <section className="turn">
       <h2>あなたの番</h2>
-      {hasError ? <p className="error">{error}</p> : null}
-      <ul className="pulls">{rows}</ul>
+      {errorLines}
+      <ul className="pulls">
+        {rows}
+        {issueRows}
+      </ul>
     </section>
   );
 }
@@ -66,6 +86,25 @@ function TurnRow(props: RowProps) {
       </button>{" "}
       <span className="tag warn">{action}</span>
       {isOpening ? <span className="muted">同期中…</span> : null}
+    </li>
+  );
+}
+
+interface HumanIssueRowProps {
+  title: string;
+  url: string;
+  action: string;
+}
+
+/** 人がやる Issue の 1 行。タップで GitHub の Issue を別のタブで開く */
+function HumanIssueRow(props: HumanIssueRowProps) {
+  const { title, url, action } = props;
+  return (
+    <li>
+      <a href={url} target="_blank" rel="noopener noreferrer">
+        {title}
+      </a>{" "}
+      <span className="tag warn">{action}</span>
     </li>
   );
 }
