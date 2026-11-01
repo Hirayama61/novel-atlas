@@ -1,3 +1,5 @@
+import { useState } from "react";
+import { IssueSheet } from "./ui/issue/IssueSheet";
 import { LibraryPage } from "./ui/LibraryPage";
 import { PullsPage } from "./ui/PullsPage";
 import { ReferencePage } from "./ui/references/ReferencePage";
@@ -10,6 +12,7 @@ import { href, useRoute } from "./ui/router";
 export default function App() {
   const route = useRoute();
   const isReading = route.page === "reader" || route.page === "referenceReader";
+  const [isIssueOpen, setIsIssueOpen] = useState(false);
   return (
     <div className={`app ${isReading ? "reading" : ""}`}>
       <header>
@@ -19,8 +22,21 @@ export default function App() {
         <nav>
           <a href={href({ page: "pulls" })}>PR</a>
           <a href={href({ page: "settings" })}>設定</a>
+          <button
+            className="link"
+            aria-label="改善 Issue を書く"
+            aria-expanded={isIssueOpen}
+            onClick={() => setIsIssueOpen(true)}
+          >
+            改善
+          </button>
         </nav>
       </header>
+      {isIssueOpen ? (
+        <div className="issue-overlay">
+          <IssueSheet onClose={() => setIsIssueOpen(false)} />
+        </div>
+      ) : null}
       <main>
         {route.page === "library" ? <LibraryPage /> : null}
         {route.page === "work" ? (
