@@ -7,6 +7,15 @@
   --sel: #f3d9a4;
   --bot: #e8efe6;
   --error: #a32a2a;
+  /* viewport-fit=cover (index.html) でノッチとホームバーの下まで描くので、その分を避ける。ノッチの無い画面では 0 */
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+  /* 画面の左右の余白。横向きではノッチ側の inset がこれより大きくなる */
+  --gutter: 16px;
+  --gutter-right: max(var(--gutter), var(--safe-right));
+  --gutter-left: max(var(--gutter), var(--safe-left));
   color-scheme: light;
   font-family: "Hiragino Mincho ProN", "Yu Mincho", "Noto Serif JP", serif;
 }
@@ -32,6 +41,18 @@ body {
   margin: 0;
   background: var(--bg);
   color: var(--fg);
+}
+
+/* ノッチの裏を覆う帯。スクロールした本文が透けず、ヘッダーと同じ var(--bg) の色になる */
+body::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: var(--safe-top);
+  background: var(--bg);
+  z-index: 3;
 }
 
 a {
@@ -64,7 +85,7 @@ header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0.5rem 16px;
+  padding: calc(0.5rem + var(--safe-top)) var(--gutter-right) 0.5rem var(--gutter-left);
   border-bottom: 1px solid var(--line);
   font-family: system-ui, sans-serif;
 }
@@ -79,7 +100,7 @@ header nav a {
 }
 
 main {
-  padding: 0 16px 6rem;
+  padding: 0 var(--gutter-right) calc(6rem + var(--safe-bottom)) var(--gutter-left);
   max-width: 60rem;
   margin: 0 auto;
 }
@@ -136,7 +157,7 @@ main {
 
 .pr-bar {
   position: sticky;
-  top: 0;
+  top: var(--safe-top);
   background: var(--bg);
   border-bottom: 1px solid var(--line);
   z-index: 2;
@@ -308,7 +329,7 @@ td.cell {
   right: 0;
   background: var(--bg);
   border-top: 1px solid var(--line);
-  padding: 0.5rem 16px;
+  padding: 0.5rem var(--gutter-right) calc(0.5rem + var(--safe-bottom)) var(--gutter-left);
   display: flex;
   flex-direction: column;
   gap: 0.4rem;

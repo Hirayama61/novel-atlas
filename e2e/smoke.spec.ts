@@ -241,3 +241,21 @@ test("参考作品を「参考」の印つきで開き、投稿用コピー無�
   await expect(page.getByText("ミオは港へ下りた。")).toBeVisible();
   await expect(page.getByRole("link", { name: /続きの話へ/ })).toHaveCount(0);
 });
+
+test("ノッチの無い画面では、safe-area の分の余白を足さない", async ({ page }) => {
+  await mockGitHub(page);
+  await page.goto("./#/pulls");
+  await page.getByRole("button", { name: /第3話 灯を消す/ }).click();
+  await page.getByText("嵐が来た。").click();
+  const expectPadding = async (selector: string, padding: string) => {
+    await expect(page.locator(selector).first()).toHaveCSS("padding", padding);
+  };
+  await expectPadding("header", "8px 16px");
+  await expectPadding("main", "0px 16px 96px");
+  await expectPadding(".composer", "8px 16px");
+  await expect(page.locator(".pr-bar")).toHaveCSS("top", "0px");
+  const notchBand = await page.evaluate<string>(
+    'getComputedStyle(document.body, "::before").height',
+  );
+  expect(notchBand).toBe("0px");
+});
