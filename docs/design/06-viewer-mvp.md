@@ -27,7 +27,7 @@
 - 自作と他作品を同じ一覧に出す(他作品は「参考」の印)。
 - 話の一覧に状態を出す: 確定済み / PR の段階(`stage:*` ラベル)/ 未読コメントの有無。
 - 字数・採点(話別の平均)を列に出す。
-- ライブラリの先頭に「あなたの番」を出す: open の話の PR のうち、返答待ち(`needs-input`)・設計の承認待ち(`stage:design` で `design-approved` 無し)・読む番(`stage:reading`)を「作品名 第N話 やること」の 1 行で並べ、タップで読書画面(設計段階なら設計書)を開く。続けて、本体リポジトリ(`Hirayama61/novel-atlas`)の open で `human` の Issue を「題 残り 未チェック/全項目」(チェックリストが無ければ「対応する」)の 1 行で並べ、タップで GitHub の Issue を別のタブで開く。チェックの更新はアプリではしない。該当が無ければ節ごと出さない。判定は `src/core/turn.ts` と `src/core/human-issues.ts`。
+- ライブラリの先頭に「あなたの番」を出す: open の話の PR のうち、返答待ち(`needs-input`)・設計の承認待ち(`stage:design` で `design-approved` 無し)・読む番(`stage:reading`)を「作品名 第N話 やること」の 1 行で並べ、タップで読書画面(設計段階なら設計書)を開く。続けて、本体リポジトリ(`Hirayama61/novel-atlas`)の open で `human` の Issue を「題 残り 未チェック/全項目」(チェックリストが無ければ「対応する」)の 1 行で並べ、タップで GitHub の Issue を別のタブで開く。チェックの更新はアプリではしない。どちらも、アプリが表示に戻るたび(`visibilitychange`)に取り直す。該当が無ければ節ごと出さない。判定は `src/core/turn.ts` と `src/core/human-issues.ts`。
 
 ### 読書
 

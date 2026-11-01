@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
-import { act, renderHook, waitFor } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { act, cleanup, renderHook, waitFor } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { TurnItem } from "../../core/turn";
 import { listPulls } from "../../sync/github";
 import { syncRef } from "../../sync/sync";
@@ -46,6 +46,10 @@ describe("toTurnRoute", () => {
 });
 
 describe("useTurnItems", () => {
+  afterEach(() => {
+    cleanup();
+  });
+
   beforeEach(() => {
     vi.mocked(listPulls).mockReset();
     vi.mocked(syncRef).mockReset();
@@ -120,5 +124,30 @@ describe("useTurnItems", () => {
     expect(result.current.error).toBe("network");
     expect(result.current.opening).toBeNull();
     expect(navigate).not.toHaveBeenCalled();
+  });
+
+  it("表示に戻ったら取り直す", async () => {
+    vi.mocked(listPulls)
+      .mockResolvedValueOnce([pull(3, "ep/lh/003", ["stage:reading"])])
+      .mockResolvedValueOnce([]);
+    const { result } = renderHook(() => useTurnItems(vi.fn()));
+    await waitFor(() => expect(result.current.items).toHaveLength(1));
+    act(() => {
+      document.dispatchEvent(new Event("visibilitychange"));
+    });
+    await waitFor(() => expect(result.current.items).toHaveLength(0));
+  });
+
+  it("取り直しが成功しても開く処理の失敗は消さない", async () => {
+    vi.mocked(listPulls).mockResolvedValue([pull(3, "ep/lh/003", ["stage:reading"])]);
+    vi.mocked(syncRef).mockRejectedValue(new Error("network"));
+    const { result } = renderHook(() => useTurnItems(vi.fn()));
+    await waitFor(() => expect(result.current.items).toHaveLength(1));
+    await act(() => result.current.open(result.current.items[0]!));
+    act(() => {
+      document.dispatchEvent(new Event("visibilitychange"));
+    });
+    await waitFor(() => expect(listPulls).toHaveBeenCalledTimes(2));
+    expect(result.current.error).toBe("network");
   });
 });
