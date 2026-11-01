@@ -63,6 +63,8 @@ export class GitHubError extends Error {
 const RATE_LIMIT_STATUSES = [403, 429];
 const TOO_MANY_REQUESTS = 429;
 const NO_REMAINING = "0";
+/** 二次的な制限の本文。ヘッダで識別できないことがある */
+const SECONDARY_RATE_LIMIT = /secondary rate limit/i;
 const MS_PER_SECOND = 1000;
 
 /** 数値として読めるヘッダの値。無いか読めなければ undefined */
@@ -81,16 +83,23 @@ function getNumberHeader(headers: Headers, name: string): number | undefined {
  * @remarks
  * GitHub は上限を使い切ると `x-ratelimit-remaining: 0` と `x-ratelimit-reset`(UNIX 秒)を、
  * 二次的な制限では `retry-after`(秒)を返す。両方あれば `retry-after` を優先する。
- * 残りがあるのに 403 なら権限不足なので undefined を返す。429 はヘッダが無くてもレート制限とする。
+ * 二次的な制限はヘッダを付けず本文で知らせることもあるので、本文も見る。
+ * 残りがあり本文も制限を言わない 403 なら権限不足なので undefined を返す。429 はヘッダが無くてもレート制限とする。
  */
-export function getRateLimit(status: number, headers: Headers, now: Date): RateLimit | undefined {
+export function getRateLimit(
+  status: number,
+  headers: Headers,
+  body: string,
+  now: Date,
+): RateLimit | undefined {
   const isRateLimitStatus = RATE_LIMIT_STATUSES.includes(status);
   if (!isRateLimitStatus) return undefined;
   const retryAfter = getNumberHeader(headers, "retry-after");
   const reset = getNumberHeader(headers, "x-ratelimit-reset");
   const isExhausted = headers.get("x-ratelimit-remaining") === NO_REMAINING;
   const hasRetryAfter = retryAfter !== undefined;
-  const isRateLimited = status === TOO_MANY_REQUESTS || isExhausted || hasRetryAfter;
+  const isSecondary = SECONDARY_RATE_LIMIT.test(body);
+  const isRateLimited = status === TOO_MANY_REQUESTS || isExhausted || hasRetryAfter || isSecondary;
   if (!isRateLimited) return undefined;
   if (hasRetryAfter) return { resetAt: new Date(now.getTime() + retryAfter * MS_PER_SECOND) };
   const hasReset = isExhausted && reset !== undefined;
@@ -114,11 +123,11 @@ export function getRateLimitMessage(rateLimit: RateLimit): string {
 }
 
 /** 失敗した応答の説明。レート制限は status より先に見る */
-async function getErrorDetail(res: Response, rateLimit: RateLimit | undefined): Promise<string> {
+function getErrorDetail(res: Response, body: string, rateLimit: RateLimit | undefined): string {
   if (rateLimit !== undefined) return getRateLimitMessage(rateLimit);
   if (res.status === 401) return "トークンが無効です";
   if (res.status === 403) return "トークンに権限がありません";
-  if (res.status === 422) return `受け付けられません: ${await res.text()}`;
+  if (res.status === 422) return `受け付けられません: ${body}`;
   return res.statusText;
 }
 
@@ -141,8 +150,9 @@ async function request<T>(
     cache: "no-store",
   });
   if (!res.ok) {
-    const rateLimit = getRateLimit(res.status, res.headers, new Date());
-    const detail = await getErrorDetail(res, rateLimit);
+    const body = await res.text();
+    const rateLimit = getRateLimit(res.status, res.headers, body, new Date());
+    const detail = getErrorDetail(res, body, rateLimit);
     throw new GitHubError(`${path}: ${res.status} ${detail}`, res.status, rateLimit);
   }
   if (raw) return (await res.text()) as T;

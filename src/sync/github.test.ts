@@ -37,7 +37,7 @@ describe("getRateLimit", () => {
       "x-ratelimit-remaining": "0",
       "x-ratelimit-reset": RESET_SECONDS,
     });
-    expect(getRateLimit(403, headers, NOW)?.resetAt).toEqual(new Date(2026, 10, 1, 15, 5, 0));
+    expect(getRateLimit(403, headers, "", NOW)?.resetAt).toEqual(new Date(2026, 10, 1, 15, 5, 0));
   });
   it("retry-after があれば、今から retry-after 秒後を優先する", () => {
     const headers = new Headers({
@@ -45,24 +45,29 @@ describe("getRateLimit", () => {
       "x-ratelimit-remaining": "0",
       "x-ratelimit-reset": RESET_SECONDS,
     });
-    expect(getRateLimit(403, headers, NOW)?.resetAt).toEqual(new Date(2026, 10, 1, 14, 2, 0));
+    expect(getRateLimit(403, headers, "", NOW)?.resetAt).toEqual(new Date(2026, 10, 1, 14, 2, 0));
   });
   it("ヘッダの無い 429 は解除時刻の分からないレート制限とする", () => {
-    expect(getRateLimit(429, new Headers(), NOW)).toEqual({ resetAt: undefined });
+    expect(getRateLimit(429, new Headers(), "", NOW)).toEqual({ resetAt: undefined });
   });
   it("残りのある 403 はレート制限としない", () => {
     const headers = new Headers({
       "x-ratelimit-remaining": "4999",
       "x-ratelimit-reset": RESET_SECONDS,
     });
-    expect(getRateLimit(403, headers, NOW)).toBeUndefined();
+    expect(getRateLimit(403, headers, "", NOW)).toBeUndefined();
+  });
+  it("ヘッダで識別できない二次的な制限は、本文から解除時刻の分からないレート制限とする", () => {
+    const headers = new Headers({ "x-ratelimit-remaining": "4999" });
+    const body = JSON.stringify({ message: "You have exceeded a secondary rate limit." });
+    expect(getRateLimit(403, headers, body, NOW)).toEqual({ resetAt: undefined });
   });
   it("403 と 429 以外はレート制限としない", () => {
     const headers = new Headers({
       "x-ratelimit-remaining": "0",
       "x-ratelimit-reset": RESET_SECONDS,
     });
-    expect(getRateLimit(404, headers, NOW)).toBeUndefined();
+    expect(getRateLimit(404, headers, "", NOW)).toBeUndefined();
   });
 });
 
