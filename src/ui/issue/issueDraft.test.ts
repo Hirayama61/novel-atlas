@@ -19,6 +19,9 @@ describe("isPermissionError", () => {
     expect(isPermissionError(new GitHubError("x", 422))).toBe(false);
     expect(isPermissionError(new Error("network"))).toBe(false);
   });
+  it("レート制限の 403 は権限不足として扱わない", () => {
+    expect(isPermissionError(new GitHubError("x", 403, { resetAt: undefined }))).toBe(false);
+  });
 });
 
 describe("canSubmitIssue", () => {

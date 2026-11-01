@@ -73,7 +73,7 @@ describe("参考作品の一覧を書き戻す", () => {
   it("権限不足は取り直さない", async () => {
     const { puts } = mockFetch(["ncode\n"], [403]);
     await expect(editReferencesCsv(CONFIG, (t) => addReference(t, "n1234ab"), "m")).rejects.toThrow(
-      "権限が足りない",
+      "トークンに権限がありません",
     );
     expect(puts).toHaveLength(1);
   });

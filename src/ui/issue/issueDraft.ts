@@ -20,6 +20,8 @@ const PERMISSION_STATUSES = [403, 404];
 export function isPermissionError(error: unknown): boolean {
   const isGitHubError = error instanceof GitHubError;
   if (!isGitHubError) return false;
+  const isRateLimited = error.rateLimit !== undefined;
+  if (isRateLimited) return false;
   return PERMISSION_STATUSES.includes(error.status);
 }
 
